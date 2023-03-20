@@ -55,6 +55,7 @@ class HouseholdSpecializationModelClass:
         C = par.wM*LM + par.wF*LF
 
         # b. home production #Changed 16. march. based on Jonas' formula
+        #based on the value of sigma we use the specified function for H
         if par.sigma == 0:
             H=np.fmin(HM,HF)
         elif par.sigma == 1:
@@ -127,20 +128,18 @@ class HouseholdSpecializationModelClass:
         sol = self.sol
 
         # We create a vector to store the log ratio of HF/HM for the different log ratios of wF/wM
-        log_HF_HM = np.zeros(par.log_wF_vec_wM.size)
+        log_HF_HM = np.zeros(par.wF_vec.size)
 
         # We loop over each value of wF in wF_vec
         for i, wF in enumerate(par.wF_vec):
             par.wF = wF # Set the new value of wF
             
             # Solve the model
-            if discrete:
+            if discrete==True:
                 opt = self.solve_discrete()
+                log_HF_HM[i] = np.log(opt.HF_HM)
             else:
                 opt = self.solve()
-
-            # Store the result
-            log_HF_HM[i] = np.log(opt.HF_HM)
 
         return log_HF_HM #Return the vector of log ratio of HF/HM
 
