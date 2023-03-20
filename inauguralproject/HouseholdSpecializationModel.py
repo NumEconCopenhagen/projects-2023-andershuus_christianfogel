@@ -30,6 +30,7 @@ class HouseholdSpecializationModelClass:
         par.wM = 1.0
         par.wF = 1.0
         par.wF_vec = np.linspace(0.8,1.2,5)
+        par.log_wF_vec_wM =np.log(par.wF_vec/par.wM) #march 20th: create vector with log values of the ratio wF/wM
 
         # e. targets
         par.beta0_target = 0.4
@@ -119,10 +120,29 @@ class HouseholdSpecializationModelClass:
 
         pass    
 
-    def solve_wF_vec(self,discrete=False):
+    def solve_wF_vec(self, discrete=False):
         """ solve model for vector of female wages """
 
-        pass
+        par = self.par
+        sol = self.sol
+
+        # We create a vector to store the log ratio of HF/HM for the different log ratios of wF/wM
+        log_HF_HM = np.zeros(par.log_wF_vec_wM.size)
+
+        # We loop over each value of wF in wF_vec
+        for i, wF in enumerate(par.wF_vec):
+            par.wF = wF # Set the new value of wF
+            
+            # Solve the model
+            if discrete:
+                opt = self.solve_discrete()
+            else:
+                opt = self.solve()
+
+            # Store the result
+            log_HF_HM[i] = np.log(opt.HF_HM)
+
+        return log_HF_HM #Return the vector of log ratio of HF/HM
 
     def run_regression(self):
         """ run regression """
