@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 class HouseholdSpecializationModelClass:
-
+    
     def __init__(self):
         """ setup model """
 
@@ -104,6 +104,8 @@ class HouseholdSpecializationModelClass:
         opt.HM = HM[j]
         opt.LF = LF[j]
         opt.HF = HF[j]
+
+        opt.HF_HM = HF[j]/HM[j] #Calculate ratio
 
         # e. print
         if do_print:
