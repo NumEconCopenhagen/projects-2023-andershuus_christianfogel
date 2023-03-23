@@ -54,8 +54,8 @@ class HouseholdSpecializationModelClass:
         # a. consumption of market goods
         C = par.wM*LM + par.wF*LF
 
-        # b. home production #Changed 16. march. based on Jonas' formula
-        #based on the value of sigma we use the specified function for H
+        # b. home production 
+        #Based on the value of sigma we use the specified function for H
         if par.sigma == 0:
             H=np.fmin(HM,HF)
         elif par.sigma == 1:
@@ -106,7 +106,6 @@ class HouseholdSpecializationModelClass:
         opt.HM = HM[j]
         opt.LF = LF[j]
         opt.HF = HF[j]
-
         opt.HF_HM = HF[j]/HM[j] #Calculate ratio
 
         # e. print
@@ -115,11 +114,6 @@ class HouseholdSpecializationModelClass:
                 print(f'{k} = {v:6.4f}')
 
         return opt
-
-    def solve(self,do_print=False):
-        """ solve model continously """
-
-        pass    
 
     def solve_wF_vec(self, discrete=False):
         """ solve model for vector of female wages """
@@ -142,6 +136,34 @@ class HouseholdSpecializationModelClass:
                 opt = self.solve()
 
         return log_HF_HM #Return the vector of log ratio of HF/HM
+    def solve_continously(self):
+        #Calling the values from previous
+        par = self.par
+        tired = SimpleNamespace()
+        #Defining the values. 
+        def utility_function(L): 
+            return -whatever(L[0],L[1],L[2],L[3])
+        #Define the bounds and constraints. 
+        constraint_men = ({'type': 'ineq', 'fun': lambda L:  24-L[0]-L[1]})
+        constraint_women = ({'type': 'ineq', 'fun': lambda L:  24-L[2]-L[3]})
+        bounds=((0,24),(0,24), (0,24), (0,24))
+        
+        # Initial guess. Not important
+        initial_guess = [12,12,12,12]
+
+        solution_cont = optimize.minimize(
+        utility_function, initial_guess,
+        method='SLSQP', bounds=bounds, constraints=(constraint_men, constraint_women))
+        # Save results
+        tired.LM_vec_cont = solution_cont.x[0]
+        tired.HM_vec_cont = solution_cont.x[1]
+        tired.LF_vec_cont = solution_cont.x[2]
+        tired.HF_vec_cont = solution_cont.x[3]
+        
+        return tired
+        
+        
+
 
     def run_regression(self):
         """ run regression """
