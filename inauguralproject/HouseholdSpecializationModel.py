@@ -1,4 +1,3 @@
-
 from types import SimpleNamespace
 
 import numpy as np
@@ -136,13 +135,17 @@ class HouseholdSpecializationModelClass:
                 opt = self.solve()
 
         return log_HF_HM #Return the vector of log ratio of HF/HM
+    
+    #We need negative value of utility function. 
+    def utility_function(self, L): 
+        return -self.calc_utility(L[0],L[1],L[2],L[3])
+    
+    
     def solve_continously(self):
         #Calling the values from previous
         par = self.par
-        tired = SimpleNamespace()
-        #Defining the values. 
-        def utility_function(L): 
-            return -whatever(L[0],L[1],L[2],L[3])
+        
+
         #Define the bounds and constraints. 
         constraint_men = ({'type': 'ineq', 'fun': lambda L:  24-L[0]-L[1]})
         constraint_women = ({'type': 'ineq', 'fun': lambda L:  24-L[2]-L[3]})
@@ -152,18 +155,18 @@ class HouseholdSpecializationModelClass:
         initial_guess = [12,12,12,12]
 
         solution_cont = optimize.minimize(
-        utility_function, initial_guess,
+        self.utility_function, initial_guess,
         method='SLSQP', bounds=bounds, constraints=(constraint_men, constraint_women))
         # Save results
-        tired.LM_vec_cont = solution_cont.x[0]
-        tired.HM_vec_cont = solution_cont.x[1]
-        tired.LF_vec_cont = solution_cont.x[2]
-        tired.HF_vec_cont = solution_cont.x[3]
+        LM_vec_cont = solution_cont.x[0]
+        HM_vec_cont = solution_cont.x[1]
+        LF_vec_cont = solution_cont.x[2]
+        HF_vec_cont = solution_cont.x[3]
         
-        return tired
+        log_HF_HM_cont=np.log(HF_vec_cont/HM_vec_cont)
+        log_wF_wM_cont=np.log(par.wF)-np.log(par.wM)
         
-        
-
+        print(log_wF_wM_cont, '=', log_HF_HM_cont)
 
     def run_regression(self):
         """ run regression """
