@@ -29,7 +29,7 @@ class HouseholdSpecializationModelClass:
         par.wM = 1.0
         par.wF = 1.0
         par.wF_vec = np.linspace(0.8,1.2,5)
-        par.log_wF_vec_wM =np.log(par.wF_vec/par.wM) #march 20th: create vector with log values of the ratio wF/wM
+        par.log_wF_vec = np.log(np.linspace(0.8,1.2,5))
 
         # e. targets
         par.beta0_target = 0.4
@@ -133,6 +133,9 @@ class HouseholdSpecializationModelClass:
                 log_HF_HM[i] = np.log(opt.HF_HM)
             else:
                 opt = self.solve()
+
+        par.wF = 1.0
+        #We return wF to original value
 
         return log_HF_HM #Return the vector of log ratio of HF/HM
     
