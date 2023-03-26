@@ -9,11 +9,23 @@ import matplotlib.pyplot as plt
 class HouseholdSpecializationModelClass:
     
     def __init__(self):
-        """ setup model """
+        """ We are having the following variables
+        rho
+        nu 
+        epsilon
+        omega
+        alpha - Decides the relative productivity of men and women in the home
+        sigma - Decides the degree of substitution. 
+        wM - Wages for men. A numeraire
+        wF - Wages for women 
+        wF_vec - Vector for women's wage used for question 2 and onwaard
+        beta0_target - From the paper for question 4
+        beta1_target - From the paper for question 4
+          
+            """
 
         # a. create namespaces
         par = self.par = SimpleNamespace()
-        sol = self.sol = SimpleNamespace()
         opt = self.opt = SimpleNamespace()
 
         # b. preferences
@@ -35,17 +47,27 @@ class HouseholdSpecializationModelClass:
         par.beta0_target = 0.4
         par.beta1_target = -0.1
 
-        # f. solution
-        sol.LM_vec = np.zeros(par.wF_vec.size)
-        sol.HM_vec = np.zeros(par.wF_vec.size)
-        sol.LF_vec = np.zeros(par.wF_vec.size)
-        sol.HF_vec = np.zeros(par.wF_vec.size)
-
-        sol.beta0 = np.nan
-        sol.beta1 = np.nan
-
     def calc_utility(self,LM,HM,LF,HF):
-        """ calculate utility """
+        """ This function is calculating the utility for the household
+        The input variables are: 
+        wM
+        LM - Hours at work for men
+        HM - Hours at home for men
+        wF
+        LF - Hours at work for women
+        HF - Hours at home for women
+        Sigma
+        Alpha
+        H = Consumption of home production
+        Omega
+        Rho
+        Q = Total consumption
+        Epsilon
+        TM - Total working hours for men
+        TF - Total working hours for women
+        Nu
+
+        """
 
         par = self.par
         sol = self.sol
@@ -76,50 +98,52 @@ class HouseholdSpecializationModelClass:
         return utility - disutility
 
     def solve_discrete(self,do_print=False):
-        """ solve model discretely """
+        """ This code solves the model distretly
+        See utility for code input. We only assume that the working hours can be divided
+        in half hours intervals. 
+        
+        """
         
         par = self.par
-        sol = self.sol
         opt = self.opt
         
-        # a. all possible choices
+        # a. all possible choices as defined above. 
         x = np.linspace(0,24,49)
-        LM,HM,LF,HF = np.meshgrid(x,x,x,x) # all combinations
+        LM,HM,LF,HF = np.meshgrid(x,x,x,x) # all combinations in one meshgrid. 
     
-        LM = LM.ravel() # vector
+        # Making the vectors for the 4 variables. 
+        LM = LM.ravel() 
         HM = HM.ravel()
         LF = LF.ravel()
         HF = HF.ravel()
 
-        # b. calculate utility
+        # b. calculate utility for all possible outcomes. 
         u = self.calc_utility(LM,HM,LF,HF)
     
-        # c. set to minus infinity if constraint is broken
+        # c. set to minus infinity if constraint is broken. Cannot work more than 24 hours per day
         I = (LM+HM > 24) | (LF+HF > 24) # | is "or"
         u[I] = -np.inf
     
-        # d. find maximizing argument
+        # d. finding index for maximizing argument
         j = np.argmax(u)
         
+        #Finding maximizing values
         opt.LM = LM[j]
         opt.HM = HM[j]
         opt.LF = LF[j]
         opt.HF = HF[j]
-        opt.HF_HM = HF[j]/HM[j] #Calculate ratio
 
-        # e. print
-        if do_print:
-            for k,v in opt.__dict__.items():
-                print(f'{k} = {v:6.4f}')
+        #Calculate ratio between hours worked at home for men and women
+        opt.HF_HM = HF[j]/HM[j] 
 
         return opt
     
-    #We need negative value of utility function. 
+    #We need negative value of utility function for the continuously function. 
     def utility_function(self, L): 
         return -self.calc_utility(L[0],L[1],L[2],L[3])
     
-    def solve_continously(self):
-        #Calling the values from previous
+    def solve_continuously(self):
+        """Input are the same as for the discrete case"""
         par = self.par
         opt = self.opt
         
@@ -129,28 +153,31 @@ class HouseholdSpecializationModelClass:
         constraint_women = ({'type': 'ineq', 'fun': lambda L:  24-L[2]-L[3]})
         bounds=((0,24),(0,24), (0,24), (0,24))
         
-        # Initial guess. Not important
+        # Initial guess. This can change the results as noted for question 3. 
         initial_guess = [6,6,6,6]
 
-        # Call optimizer
+        # Call optimizer based on the input above
         solution_cont = optimize.minimize(
         self.utility_function, initial_guess,
         method='SLSQP', bounds=bounds, constraints=(constraint_men, constraint_women))
         
-        # Save results
+        # Save results. x[0]=L[0] as so on. 
         opt.LM = solution_cont.x[0]
         opt.HM = solution_cont.x[1]
         opt.LF = solution_cont.x[2]
         opt.HF = solution_cont.x[3]
+
+        #Calculating the ratio
         opt.HF_HM = solution_cont.x[3]/solution_cont.x[1] #calculate ratio
         
         return opt
     
     def solve_wF_vec(self, discrete=False):
-        """ solve model for vector of female wages """
+        """ solve model for vector of female wages 
+        For discrete case we use discrete=True and discrete=False for the continuous model
+        """
 
         par = self.par
-        sol = self.sol
         opt = self.opt
 
         # We create a vector to store the log ratio of HF/HM for the different log ratios of wF/wM
@@ -160,21 +187,22 @@ class HouseholdSpecializationModelClass:
         for i, wF in enumerate(par.wF_vec):
             par.wF = wF # Set the new value of wF
             
-            # Solve the model
+            # Solve the model based on whether we have a discrete or continuous case
             if discrete==True:
                 opt = self.solve_discrete()
                 log_HF_HM[i] = np.log(opt.HF_HM)
             else:
-                opt = self.solve_continously()
+                opt = self.solve_continuously()
                 log_HF_HM[i] = np.log(opt.HF_HM)
 
         par.wF = 1.0
         #We return wF to original value
-
         return log_HF_HM #Return the vector of log ratio of HF/HM
 
     def run_regression(self):
-        """ run regression """
+        """ This regression is for question 4 and 5 
+        Our input is the value from the solve_wF_Vec
+        Therefore it can be used for discrete and continuous case"""
 
         par = self.par
         opt = self.opt
@@ -183,4 +211,6 @@ class HouseholdSpecializationModelClass:
         x = np.log(par.wF_vec)
         y = self.solve_wF_vec(discrete=False)
         A = np.vstack([np.ones(x.size),x]).T
+
+        #Making the regression and returning the parameter estimates. 
         opt.beta0,opt.beta1 = np.linalg.lstsq(A,y,rcond=None)[0]
