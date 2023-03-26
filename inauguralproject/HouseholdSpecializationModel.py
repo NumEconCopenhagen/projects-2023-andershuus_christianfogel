@@ -130,7 +130,7 @@ class HouseholdSpecializationModelClass:
         bounds=((0,24),(0,24), (0,24), (0,24))
         
         # Initial guess. Not important
-        initial_guess = [12,12,12,12]
+        initial_guess = [6,6,6,6]
 
         # Call optimizer
         solution_cont = optimize.minimize(
