@@ -132,7 +132,8 @@ class HouseholdSpecializationModelClass:
                 opt = self.solve_discrete()
                 log_HF_HM[i] = np.log(opt.HF_HM)
             else:
-                opt = self.solve()
+                opt = self.solve_continously()
+                log_HF_HM[i] = np.log(opt.HF_HM)
 
         par.wF = 1.0
         #We return wF to original value
@@ -143,10 +144,10 @@ class HouseholdSpecializationModelClass:
     def utility_function(self, L): 
         return -self.calc_utility(L[0],L[1],L[2],L[3])
     
-    
     def solve_continously(self):
         #Calling the values from previous
         par = self.par
+        opt = SimpleNamespace()
         
 
         #Define the bounds and constraints. 
@@ -157,19 +158,19 @@ class HouseholdSpecializationModelClass:
         # Initial guess. Not important
         initial_guess = [12,12,12,12]
 
+        # Call optimizer
         solution_cont = optimize.minimize(
         self.utility_function, initial_guess,
         method='SLSQP', bounds=bounds, constraints=(constraint_men, constraint_women))
+        
         # Save results
-        LM_vec_cont = solution_cont.x[0]
-        HM_vec_cont = solution_cont.x[1]
-        LF_vec_cont = solution_cont.x[2]
-        HF_vec_cont = solution_cont.x[3]
+        opt.LM = solution_cont.x[0]
+        opt.HM = solution_cont.x[1]
+        opt.LF = solution_cont.x[2]
+        opt.HF = solution_cont.x[3]
+        opt.HF_HM = solution_cont.x[3]/solution_cont.x[1] #calculate ratio
         
-        log_HF_HM_cont=np.log(HF_vec_cont/HM_vec_cont)
-        log_wF_wM_cont=np.log(par.wF)-np.log(par.wM)
-        
-        print(log_wF_wM_cont, '=', log_HF_HM_cont)
+        return opt
 
     def run_regression(self):
         """ run regression """
