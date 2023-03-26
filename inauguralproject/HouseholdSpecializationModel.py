@@ -29,8 +29,7 @@ class HouseholdSpecializationModelClass:
         par.wM = 1.0
         par.wF = 1.0
         par.wF_vec = np.linspace(0.8,1.2,5)
-        par.log_wF_vec = np.log(np.linspace(0.8,1.2,5))
-
+    
         # e. targets
         par.beta0_target = 0.4
         par.beta1_target = -0.1
@@ -113,32 +112,6 @@ class HouseholdSpecializationModelClass:
                 print(f'{k} = {v:6.4f}')
 
         return opt
-
-    def solve_wF_vec(self, discrete=False):
-        """ solve model for vector of female wages """
-
-        par = self.par
-        sol = self.sol
-
-        # We create a vector to store the log ratio of HF/HM for the different log ratios of wF/wM
-        log_HF_HM = np.zeros(par.wF_vec.size)
-
-        # We loop over each value of wF in wF_vec
-        for i, wF in enumerate(par.wF_vec):
-            par.wF = wF # Set the new value of wF
-            
-            # Solve the model
-            if discrete==True:
-                opt = self.solve_discrete()
-                log_HF_HM[i] = np.log(opt.HF_HM)
-            else:
-                opt = self.solve_continously()
-                log_HF_HM[i] = np.log(opt.HF_HM)
-
-        par.wF = 1.0
-        #We return wF to original value
-
-        return log_HF_HM #Return the vector of log ratio of HF/HM
     
     #We need negative value of utility function. 
     def utility_function(self, L): 
@@ -171,6 +144,32 @@ class HouseholdSpecializationModelClass:
         opt.HF_HM = solution_cont.x[3]/solution_cont.x[1] #calculate ratio
         
         return opt
+    
+    def solve_wF_vec(self, discrete=False):
+        """ solve model for vector of female wages """
+
+        par = self.par
+        sol = self.sol
+
+        # We create a vector to store the log ratio of HF/HM for the different log ratios of wF/wM
+        log_HF_HM = np.zeros(par.wF_vec.size)
+
+        # We loop over each value of wF in wF_vec
+        for i, wF in enumerate(par.wF_vec):
+            par.wF = wF # Set the new value of wF
+            
+            # Solve the model
+            if discrete==True:
+                opt = self.solve_discrete()
+                log_HF_HM[i] = np.log(opt.HF_HM)
+            else:
+                opt = self.solve_continously()
+                log_HF_HM[i] = np.log(opt.HF_HM)
+
+        par.wF = 1.0
+        #We return wF to original value
+
+        return log_HF_HM #Return the vector of log ratio of HF/HM
 
     def run_regression(self):
         """ run regression """
