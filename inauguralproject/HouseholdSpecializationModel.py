@@ -14,6 +14,7 @@ class HouseholdSpecializationModelClass:
         # a. create namespaces
         par = self.par = SimpleNamespace()
         sol = self.sol = SimpleNamespace()
+        opt = self.opt = SimpleNamespace()
 
         # b. preferences
         par.rho = 2.0
@@ -79,7 +80,7 @@ class HouseholdSpecializationModelClass:
         
         par = self.par
         sol = self.sol
-        opt = SimpleNamespace()
+        opt = self.opt
         
         # a. all possible choices
         x = np.linspace(0,24,49)
@@ -120,7 +121,7 @@ class HouseholdSpecializationModelClass:
     def solve_continously(self):
         #Calling the values from previous
         par = self.par
-        opt = SimpleNamespace()
+        opt = self.opt
         
 
         #Define the bounds and constraints. 
@@ -150,6 +151,7 @@ class HouseholdSpecializationModelClass:
 
         par = self.par
         sol = self.sol
+        opt = self.opt
 
         # We create a vector to store the log ratio of HF/HM for the different log ratios of wF/wM
         log_HF_HM = np.zeros(par.wF_vec.size)
@@ -175,14 +177,10 @@ class HouseholdSpecializationModelClass:
         """ run regression """
 
         par = self.par
-        sol = self.sol
+        opt = self.opt
+
 
         x = np.log(par.wF_vec)
-        y = np.log(sol.HF_vec/sol.HM_vec)
+        y = self.solve_wF_vec(discrete=False)
         A = np.vstack([np.ones(x.size),x]).T
-        sol.beta0,sol.beta1 = np.linalg.lstsq(A,y,rcond=None)[0]
-    
-    def estimate(self,alpha=None,sigma=None):
-        """ estimate alpha and sigma """
-
-        pass
+        opt.beta0,opt.beta1 = np.linalg.lstsq(A,y,rcond=None)[0]
