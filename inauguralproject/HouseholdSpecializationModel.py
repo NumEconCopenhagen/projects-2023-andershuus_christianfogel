@@ -70,7 +70,6 @@ class HouseholdSpecializationModelClass:
         """
 
         par = self.par
-        sol = self.sol
 
         # a. consumption of market goods
         C = par.wM*LM + par.wF*LF
