@@ -1,14 +1,17 @@
 # Data analysis project
 
-Our project is titled **PROJECT TITLE** and is about EXPLAIN.
+Our project is titled **The correlation between family income and membersship of the Danish church.** and is about examining whether there can be found a correlation between the being a member of the Danish church and average family disposable income.
 
 The **results** of the project can be seen from running [dataproject.ipynb](dataproject.ipynb).
 
-We apply the **following datasets**:
+We download the **following datasets** from the DST API:
 
-1. dataX.csv (*source*) 
-1. dataY.csv (*source*)
+1: INDKP132 - this has information on disposable family income
+2: KM6 - this has information on membership status in the Danish church
+
+We use a package, found on github, that can produce a map of Denmark: https://github.com/Neogeografen/dagi
 
 **Dependencies:** Apart from a standard Anaconda Python 3 installation, the project requires the following installations:
 
-``pip install matplotlib-venn``
+``%pip install geopandas``
+``%pip install mapclassify``
