@@ -14,4 +14,6 @@ We use a package, found on github, that can produce a map of Denmark: https://gi
 **Dependencies:** Apart from a standard Anaconda Python 3 installation, the project requires the following installations:
 
 ``%pip install geopandas``
-``%pip install mapclassify``
+``%pip install mapclassify``'
+``%pip install folium``
+``%pip install branca``
