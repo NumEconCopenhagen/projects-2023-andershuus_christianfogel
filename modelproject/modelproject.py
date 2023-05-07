@@ -59,24 +59,25 @@ def interactive_figure(alpha2,e11,e21,e12,e22):
     
     alpha1_vec = np.linspace(0,1,10)
     
-    p_vec = np.empty(10)
-    c11_vec = np.empty(10)
-    c21_vec = np.empty(10)
-    c12_vec = np.empty(10)
-    c22_vec = np.empty(10)
+    p_vec = np.empty(len(alpha1_vec))
+    c11_vec = np.empty(len(alpha1_vec))
+    c21_vec = np.empty(len(alpha1_vec))
+    c12_vec = np.empty(len(alpha1_vec))
+    c22_vec = np.empty(len(alpha1_vec))
 
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     # a. calculations
     for i, alpha1 in enumerate(alpha1_vec):
-        p_vec[i],c11_vec[i],c21_vec[i-1],c12_vec[i],c22_vec[i] = consumption(alpha1,alpha2,e11,e21,e12,e22)
+        p_vec[i],c11_vec[i],c21_vec[i],c12_vec[i],c22_vec[i] = consumption(alpha1,alpha2,e11,e21,e12,e22)
     
     # b. figure
     ax.plot(alpha1_vec, c11_vec, label='Consumption of good 1 by consumer 1')
     ax.plot(alpha1_vec, c21_vec, label='Consumption of good 2 by consumer 1')
     ax.plot(alpha1_vec, c12_vec, label='Consumption of good 1 by consumer 2')
     ax.plot(alpha1_vec, c22_vec, label='Consumption of good 2 by consumer 2')
-    ax.set_xlim([0,0.99]) # 
-    ax.set_ylim([0,40]) #
+    ax.set_xlim([0.1,0.9]) # 
+    ax.set_ylim([0,20]) #
     ax.set_title("Distribution of goods")
     ax.legend(loc= 'upper right')
+
