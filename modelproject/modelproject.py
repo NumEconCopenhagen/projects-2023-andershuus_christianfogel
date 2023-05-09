@@ -152,10 +152,14 @@ class numerical_solution():
 
         obj = lambda h: -(p*y-w*h)
 
+        bounds = (0,par.L)
+
         #c. call optimizer
         x0 = [0.0]
-        res = optimize.minimize(obj,x0,bounds=((0,None),),method='L-BFGS-B') #look into method
+        res = optimize.minimize(obj,x0,
+                             method='SLSQP',
+                             bounds=bounds,
+                             options={'disp':True})
     
         #d. unpack solution
-
         return res
