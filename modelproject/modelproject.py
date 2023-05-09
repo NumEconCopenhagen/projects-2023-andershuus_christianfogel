@@ -5,50 +5,47 @@ import matplotlib.pyplot as plt
 
 
 #Analytical solution, i.e. section 2
-def consumption(alpha1,alpha2,e11,e21,e12,e22): 
+def consumption(alpha,beta,A): 
     """
         
     Args:
 
-        alpha1: relative preferences for consumer 1
-        alpha2: relative preferences for consumer 2
-        e11: Initial endowment of good 1 for consumer 1
-        e21: Initial endowment of good 2 for consumer 1
-        e12: Initial endowment of good 1 for consumer 2
-        e22: Initial endowment of good 2 for consumer 2
+        alpha: relative preferences for consumption relative to leisure
+        beta: output elasticity
+        A: TFP
         
     Returns:
     
-        c11 = Consumption of good 1 for consumer 1
-        c21 = Consumption of good 2 for consumer 1    
-        c12 = Consumption of good 1 for consumer 2    
-        c22 = Consumption of good 2 for consumer 2
-        p = relative price of good 1  
+        p = relative price of consumption good (Wage is normalized to 1)
+        h = working hours (labor demand)
+        y = production
+        pi = profit
+        Inc = income for consumer
+        c = consumption
+        l = leisure 
         
     """
     # Initally find the price
-    p = (alpha1*e21+alpha2*e22)/(e11*(1-alpha1)+e12*(1-alpha2))
+    p = (24**(1-beta))/(beta*alpha)+((24*alpha)/(1-alpha))**(1-beta)*1/(A*beta**beta)
 
-    #Then define the income for each consumer: 
-    I_1=p*e11+e21
-    I_2=p*e12+e22
+    # Labor demand, production and profit for the firm
+    h = (beta*p*A)**(1/(1-beta))
+    y = A*h**beta
+    pi = p*y - h
 
-    #Consumption of good 1 and good 2 for consumer 1
-    c11 = alpha1*I_1/p
-    c21 = (1-alpha1)*I_1
-
-    #Consumption of good 1 and good 2 for consumer 2
-    c12 = alpha2*I_2/p
-    c22 = (1-alpha2)*I_2
+    # Define income, leisure and consumption
+    Inc = pi+24
+    c = alpha*Inc/p
+    l = (1-alpha)*Inc
 
     #Check that supply is equal to demand for both goods. Demand cannot be smaller due to assumption about monotonicity
-    assert np.isclose(e11+e12, c11+c12,0.0), 'supply is not equal to demand for good 1'
-    assert np.isclose(e21+e22, c21+c22,0.0), 'supply is not equal to demand for good 2'
+    assert np.isclose(c, y,1e-8), 'Good market does not clear'
+    assert np.isclose(24-h, l,0.0), 'Labor market does not clear'
 
-    return p,c11,c21,c12,c22
+    return p,h,y,pi,Inc,c,l
 
     #Print statement which are not used. 
-    #print(f'price = {p:.1f}')
+    print(f'price = {p:.1f}')
     #print(f'consumer 1 consumption of good 1 = {c11:.1f}')
     #print(f'consumer 1 consumption of good 2 = {c21:.1f}')
     #print(f'consumer 2 consumption of good 1 = {c12:.1f}')
