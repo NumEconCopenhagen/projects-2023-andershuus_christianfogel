@@ -118,7 +118,6 @@ def interactive_figure(beta,A):
 
     plt.tight_layout()
 
-
 class numerical_solution():
 
     def __init__(self):
