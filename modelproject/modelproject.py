@@ -67,6 +67,8 @@ def interactive_figure(beta,A):
     Returns:
     
         p_vec (in form of a figure)= vector of relative price of consumption good (Wage is normalized to 1) w.r.t. alpha
+        c_vec (in form of a figure)= vector of consumption w.r.t. alpha
+        l_vec (in form of a figure)= vector of leisure w.r.t. alpha
         
     """
     
@@ -86,8 +88,8 @@ def interactive_figure(beta,A):
     
     # b. figure for price
 
-    fig = plt.figure()
-    ax = fig.add_subplot(2,1,1)
+    fig = plt.figure(figsize=(8, 10))
+    ax = fig.add_subplot(3,1,1)
     ax.plot(alpha_vec, p_vec, label='Price of consumption relative to leisure')
     ax.set_xlim([0.05,0.95]) # 
     ax.set_ylim([0,20]) #
@@ -96,12 +98,21 @@ def interactive_figure(beta,A):
     ax.legend(loc= 'upper right')
 
     # c. figure for consumption
-    bx = fig.add_subplot(2,1,2)
+    bx = fig.add_subplot(3,1,2)
     bx.plot(alpha_vec, c_vec, label='Consumption')
     bx.set_xlim([0.05,0.95]) # 
     bx.set_ylim([0,70]) #
     bx.set_title("Consumption")
     bx.set_xlabel("Alpha") 
     bx.legend(loc= 'upper right')
+
+    # d. figure for leisure
+    cx = fig.add_subplot(3,1,3)
+    cx.plot(alpha_vec, l_vec, label='Leisure')
+    cx.set_xlim([0.05,0.95]) # 
+    cx.set_ylim([0,70]) #
+    cx.set_title("Leisure")
+    cx.set_xlabel("Alpha") 
+    cx.legend(loc= 'upper right')
 
     plt.tight_layout()
