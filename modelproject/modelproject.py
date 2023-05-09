@@ -40,7 +40,7 @@ def consumption(alpha,beta,A, L=24):
     c = alpha*Inc/p
     l = (1-alpha)*Inc
 
-    #Check that supply is equal to demand for both goods. Demand cannot be smaller due to assumption about monotonicity
+    #Check that good and labor market clear
     assert np.isclose(c, y,1e-8), 'Good market does not clear'
     assert np.isclose(L-h, l,0.0), 'Labor market does not clear'
 
@@ -57,8 +57,20 @@ def consumption(alpha,beta,A, L=24):
 
 #Making an interactive plot of the solution
 def interactive_figure(beta,A):
+    """
+        
+    Args:
+
+        beta: output elasticity
+        A: TFP
+        
+    Returns:
     
-    alpha_vec = np.linspace(0.05,0.95,9) #Cannot be 0 or 1. 
+        p_vec (in form of a figure)= vector of relative price of consumption good (Wage is normalized to 1) w.r.t. alpha
+        
+    """
+    
+    alpha_vec = np.linspace(1e-8,1-1e-8,10) #Cannot be 0 or 1 
     
     p_vec = np.empty(len(alpha_vec))
     h_vec = np.empty(len(alpha_vec))
@@ -68,22 +80,28 @@ def interactive_figure(beta,A):
     c_vec = np.empty(len(alpha_vec))
     l_vec = np.empty(len(alpha_vec))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(1,1,1)
-    # a. calculations
+    # a. Solving the model for the given alpha
     for i, alpha in enumerate(alpha_vec):
         p_vec[i],h_vec[i],y_vec[i],pi_vec[i],Inc_vec[i], c_vec[i], l_vec[i] = consumption(alpha,beta,A)
     
-    # b. figure
-    ax.plot(alpha_vec, p_vec, label='Price of good 1')
-    #ax.plot(alpha_vec, h_vec, label='Working hours') Deactivated because it is inverse related to leisure
-    #ax.plot(alpha_vec, y_vec, label='Production') # Equal to consumption
-    #ax.plot(alpha_vec, pi_vec, label='Profit') Not of particular interest
-    #ax.plot(alpha_vec, Inc_vec, label='Consumer income') Not of particular interest
-    #ax.plot(alpha_vec, c_vec, label='Consumption')
-    #ax.plot(alpha_vec, l_vec, label='Leisure')
-    ax.set_xlim([0.1,0.9]) # 
-    ax.set_ylim([0,5]) #
-    ax.set_title("Results of models")
+    # b. figure for price
+
+    fig = plt.figure()
+    ax = fig.add_subplot(2,1,1)
+    ax.plot(alpha_vec, p_vec, label='Price of consumption relative to leisure')
+    ax.set_xlim([0.05,0.95]) # 
+    ax.set_ylim([0,20]) #
+    ax.set_title("Price")
+    ax.set_xlabel("Alpha") 
     ax.legend(loc= 'upper right')
 
+    # c. figure for consumption
+    bx = fig.add_subplot(2,1,2)
+    bx.plot(alpha_vec, c_vec, label='Consumption')
+    bx.set_xlim([0.05,0.95]) # 
+    bx.set_ylim([0,70]) #
+    bx.set_title("Consumption")
+    bx.set_xlabel("Alpha") 
+    bx.legend(loc= 'upper right')
+
+    plt.tight_layout()
