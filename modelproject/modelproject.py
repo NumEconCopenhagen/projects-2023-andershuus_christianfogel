@@ -2,6 +2,7 @@ from scipy import optimize
 import numpy as np
 import ipywidgets as widgets # Interactive plots
 import matplotlib.pyplot as plt
+from types import SimpleNamespace
 
 
 #Analytical solution, i.e. section 2
@@ -116,3 +117,47 @@ def interactive_figure(beta,A):
     cx.legend(loc= 'upper right')
 
     plt.tight_layout()
+
+
+class numerical_solution():
+
+    def __init__(self):
+
+        par = self.par = SimpleNamespace()
+
+        # a. parameters
+        par.alpha = 0.5
+        par.beta = 0.5
+        par.A = 20
+        par.L = 24
+
+        # b. solution
+        sol = self.sol = SimpleNamespace()
+        
+        sol.p = 1 # output price
+        sol.w = 1 # wage
+        sol.c = 1 # consumption
+        sol.l = 1 # leisure
+        sol.h = 1 # working hours
+        sol.y = 1 # production
+        sol.pi = 1 # profit
+        sol.Inc = 1 # income
+
+    def firm(self,p,w):
+        
+
+        #a. unpack
+        par = self.par
+
+        #b. objective function
+        y = lambda h: par.alpha*h**par.beta
+
+        obj = lambda h: -(p*y-w*h)
+
+        #c. call optimizer
+        x0 = [0.0]
+        res = optimize.minimize(obj,x0,bounds=((0,None),),method='L-BFGS-B') #look into method
+    
+        #d. unpack solution
+
+        return res
