@@ -128,7 +128,7 @@ class numerical_solution():
         par.alpha = 0.5
         par.beta = 0.5
         par.A = 20
-        par.L = 24
+        par.L = 75
 
         # b. solution
         sol = self.sol = SimpleNamespace()
@@ -181,30 +181,62 @@ class numerical_solution():
         return h_star,y_star
 
 
-    def utility(self):
+    def utility(self,c,h):
         "utility of the consumer"
 
         #a. unpack
         par = self.par
 
         #b. utility
-        u = c**par.alfa*l**(1-par.alpha)
+        u = c**par.alpha*(par.L-h)**(1-par.alpha)
 
         #c. output
         return u
 
-    def income(self):
+    def income(self,h,p):
         "consumer's income/budget constraint"
 
         #a. unpack
         par = self.par
 
-        #b. budget constraint
-        Inc = self.firm_profit()+par.L
+        #b. budget constraint. Minus because the income is defined negatively in order to optimize. 
+        Inc = -self.firm_profit(h,p)+par.L
 
         #c. output
         return Inc
 
+    def utility_maximization(self,p): 
+
+        #a. unpack
+        par = self.par
+
+        #b. call optimizer
+        #Bounds
+        bounds = ((0,np.inf),(0,par.L))
+        #Initial guess
+        x0=[25,8]
+
+        #Constraints. The income must be equal to or greater than the income. We first define l 
+        constraint = self.income-p*x[0]-par.L-x[1]
+        ineq_con = {'type': 'ineq', 'fun': constraint} 
+
+    
+        #sol_h = optimize.minimize(self.firm_profit,x0,args =(p,),bounds=bounds,method='L-BFGS-B')
+
+        # b. call optimizer
+        sol_con = optimize.minimize(self.utility,x0,
+                             method='SLSQP',
+                             bounds=bounds,
+                             constraints=[ineq_con],
+                             options={'disp':True})
+        c_star = sol_con.x[0]
+        l_star = sol_con.x[1]
+
+
+
+
+    
+    
     def market_clearing(self,p):
         #a. unpack
         par = self.par
