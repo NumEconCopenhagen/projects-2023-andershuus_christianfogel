@@ -119,7 +119,7 @@ def interactive_figure(beta,A):
     plt.tight_layout()
 
 class numerical_solution():
-
+    
     def __init__(self):
 
         par = self.par = SimpleNamespace()
@@ -142,25 +142,101 @@ class numerical_solution():
         sol.pi = 1 # profit
         sol.Inc = 1 # income
 
-    def firm(self,p,w):
-        
+    def production_function(self,h):
+        "production function of the firm"
 
         #a. unpack
         par = self.par
 
+        #b. production function
+        y = par.A*h**par.beta
+        
+        #c. output
+        return y
+
+    def firm_profit(self):
+        "profit function of the firm"
+
+        #a. profit
+        pi = p*self.production_function()-h
+
+        #b. output
+        return pi
+
+    def utility(self):
+        "utility of the consumer"
+
+        #a. unpack
+        par = self.par
+
+        #b. utility
+        u = c**par.alfa*l**(1-par.alpha)
+
+        #c. output
+        return u
+
+    def income(self):
+        "consumer's income/budget constraint"
+
+        #a. unpack
+        par = self.par
+
+        #b. budget constraint
+        Inc = self.firm_profit()+par.L
+
+        #c. output
+        return Inc
+
+    def market_clearing(self,p):
+        #a. unpack
+        par = self.par
+
+        #b. market clearing
+        goods_market_claering = self.production_function-c
+        labor_market_clearing = h - par.L + l
+
+        return goods_market_claering, labor_market_clearing
+    
+    def solve(self):
+
+        #a. unpack
+        par = self.par
+
+        #b. initial guess
+        p_guess = 1.0
+
+        #c. tolerance
+        tolerance = 1e-8
+
+        #d. iterations
+        iterations=500
+        i = 0
+
+        
+
+
+
+
+
+    def firm(self):
+        "maximize firm profits"
+
+        #a. unpack
+        par = self.par
+        sol = self.sol
+
+        p = sol.p
+        w = sol.w
+
         #b. objective function
         y = lambda h: par.alpha*h**par.beta
 
-        obj = lambda h: -(p*y-w*h)
-
-        bounds = (0,par.L)
+        obj = lambda h: -(p*y(h)-w*h)
 
         #c. call optimizer
         x0 = [0.0]
-        res = optimize.minimize(obj,x0,
-                             method='SLSQP',
-                             bounds=bounds,
-                             options={'disp':True})
-    
+        res = optimize.minimize(obj,x0,bounds=((0,None),),method='L-BFGS-B')
+        
         #d. unpack solution
-        return res
+        sol.h_star = res.x[0]
+        sol.y_star = y(sol.h_star)
