@@ -119,7 +119,7 @@ def interactive_figure(beta,A):
     plt.tight_layout()
 
 class numerical_solution():
-    
+
     def __init__(self):
 
         par = self.par = SimpleNamespace()
@@ -154,14 +154,32 @@ class numerical_solution():
         #c. output
         return y
 
-    def firm_profit(self):
+    def firm_profit(self,h,p):
         "profit function of the firm"
 
         #a. profit
-        pi = p*self.production_function()-h
+        pi = p*self.production_function(h)-h
 
         #b. output
-        return pi
+        return -pi
+    
+    def firm_profit_maximization(self,p):
+
+        #a. unpack
+        par = self.par
+
+        #b. call optimizer
+        bound = ((0,par.L),)
+        x0=[0.0]
+        sol_h = optimize.minimize(self.firm_profit,x0,args = (p,),bounds=bound,method='L-BFGS-B')
+
+        #c. unpack solution
+        h_star = sol_h.x[0]
+        y_star = self.production_function(h_star)
+
+
+        return h_star,y_star
+
 
     def utility(self):
         "utility of the consumer"
@@ -197,6 +215,8 @@ class numerical_solution():
 
         return goods_market_claering, labor_market_clearing
     
+    
+    
     def solve(self):
 
         #a. unpack
@@ -209,8 +229,11 @@ class numerical_solution():
         tolerance = 1e-8
 
         #d. iterations
-        iterations=500
+        max_iterations=500
         i = 0
+
+        #e. solve for p
+
 
         
 
@@ -240,3 +263,120 @@ class numerical_solution():
         #d. unpack solution
         sol.h_star = res.x[0]
         sol.y_star = y(sol.h_star)
+
+
+class lecture_5():
+    
+    def __init__(self):
+
+        par = self.par = SimpleNamespace()
+
+        # a. parameters
+        par.alpha = 0.5
+        par.beta = 0.5
+        par.A = 20
+        par.L = 24
+
+        # b. grids
+        par.grid_p = np.linspace(0.1,1.5,10)
+        par.grid_mkt_clearing = np.zeros(10)
+
+        # c. solution
+        sol = self.sol = SimpleNamespace()
+        
+        sol.p = 1 # output price
+
+    def firm(self):
+        """ maximize firm profits """
+            
+        par = self.par
+        sol = self.sol
+
+        p = sol.p
+
+        # a. solve
+        f = lambda h: par.A*h**par.beta
+        obj = lambda h: -(p*f(h)-h)
+        x0 = [0.0]
+        res = optimize.minimize(obj,x0,bounds=((0,par.L),),method='L-BFGS-B')
+            
+        # b. save
+        sol.h_star = res.x[0]
+        sol.y_star = f(sol.h_star)
+        sol.pi = p*sol.y_star-sol.h_star
+
+    def utility_c(self,c,h):
+        """ utility of consumer """
+
+        par = self.par
+
+        return c**par.alpha*h**(1-par.alpha)
+
+    def consumer(self):
+        """ maximize utility of consumer """
+        par = self.par
+        sol = self.sol
+
+        p = sol.p
+        pi = sol.pi
+
+        # a. solve
+        obj = lambda h: -self.utility_c(par.alpha*(h+pi)/p,h) 
+        res = optimize.minimize_scalar(obj,bounds=(0,1),method='bounded')
+        
+        # b. save
+        sol.h_star = res.x
+        sol.c_star = (sol.h_star+pi)/p
+        sol.l_star = (1-par.alpha)*(pi+sol.h_star)
+
+    def evaluate_equilibrium(self):
+        """ evaluate equilirium """
+        
+        par = self.par
+        sol = self.sol
+
+        # a. optimal behavior of firm
+        self.firm()
+
+        # b. optimal behavior of households
+        self.consumer()
+
+        # c. market clearing
+        sol.goods_mkt_clearing = sol.y_star - sol.c_star
+        sol.labor_mkt_clearing = par.L - sol.l_star-sol.h_star
+    
+    def find_equilibrium(self):
+
+        par = self.par
+        sol = self.sol
+
+        # a. grid search
+        print('grid search:')
+        for i,p in enumerate(par.grid_p):
+            sol.p = p
+            self.evaluate_equilibrium()
+            par.grid_mkt_clearing[i] = sol.goods_mkt_clearing
+            print(f' p = {p:.2f} -> {par.grid_mkt_clearing[i]:12.8f}')
+        
+        print('')
+
+        # b. find bounds
+        left = np.max(par.grid_p[par.grid_mkt_clearing < 0])
+        right = np.min(par.grid_p[par.grid_mkt_clearing > 0])
+        print(f'equilibrium price must be in [{left:.2f},{right:.2f}]\n')            
+
+        # c. bisection search
+        def obj(p):
+            sol.p = p
+            self.evaluate_equilibrium()
+            return sol.goods_mkt_clearing
+
+        res = optimize.root_scalar(obj,bracket=[left,right],method='bisect')
+        sol.p = res.root
+        print(f'the equilibrium wage is {sol.w:.4f}\n')
+
+        # d. show result
+        u = self.utility_c(sol.c_star,sol.h_star)
+        print(f'capitalists  : c = {sol.c_star:6.4f}, h = {sol.h_star:6.4f}, u = {u:7.4f}')        
+        print(f'goods market : {sol.goods_mkt_clearing:.8f}')
+        print(f'labor market : {sol.labor_mkt_clearing:.8f}')
