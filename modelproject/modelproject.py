@@ -273,7 +273,7 @@ class numerical_solution():
 
         return goods_market_clearing, labor_market_clearing
     
-    def find_relative_price(self,tol=1e-8,iterations=500, p_guess=0.5, delta=1e-8, adj=0.5):
+    def find_relative_price(self,tol=1e-4,iterations=500, p_lower=0.25, p_upper=0.75, delta=1e-8, adj=0.5):
         "find price that causes markets to clear"
 
         # a. unpack
@@ -282,200 +282,26 @@ class numerical_solution():
 
         #Initial values.                                                                                                       
         i=0
-        p=p_guess
 
         while i<iterations: 
             
+            p=(p_lower+p_upper)/2
             f = self.market_clearing(p)[0]
-            fp = (self.market_clearing(p+delta)[0]-f)/delta
+            #Approximation of derivative. 
+            #fp = (self.market_clearing(p+delta)[0]-f)/delta
 
-            if np.abs(fp)<tol: 
-                print(f' p = {p:.2f} -> {self.market_clearing(p)[0]:12.8f}')
+            if np.abs(f)<tol: 
+                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}')
                 break
+            elif self.market_clearing(p_lower)[0]*f<0:
+                p_upper=p
+                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}')
+            elif self.market_clearing(p_upper)[0]*f<0:
+                p_lower=p
+                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}')
             else: 
-                #print(self.market_clearing(p)[0]) 
-                print(f' higher value = {self.market_clearing(p+delta)[0]:.5f} - f = {self.market_clearing(p)[0]:.5f}')
-                print(f' p = {p:.2f} -> fp = {fp:.2f} -> {self.market_clearing(p)[0]:12.8f}')
-                p=p-adj*fp
-                if p < 0:
-                    p=1e-5
-
-
-
+                print("Fail")
+                return None
+            
             i+=1
         return p
-
-        #p_opt = optimize.root_scalar(self.market_clearing(p)[0], bracket=[0.1, 10], x0=p_guess, method='brentq')
-        #sol.p_star = p_opt.root
-
-        #return sol.p_star
-
-
-
-
-
-
-    
-    def solve(self):
-
-        #a. unpack
-        par = self.par
-
-        #b. initial guess
-        p_guess = 1.0
-
-        #c. tolerance
-        tolerance = 1e-8
-
-        #d. iterations
-        max_iterations=500
-        i = 0
-
-        #e. solve for p
-
-
-        
-
-
-
-
-
-    def firm(self):
-        "maximize firm profits"
-
-        #a. unpack
-        par = self.par
-        sol = self.sol
-
-        p = sol.p
-        w = sol.w
-
-        #b. objective function
-        y = lambda h: par.alpha*h**par.beta
-
-        obj = lambda h: -(p*y(h)-w*h)
-
-        #c. call optimizer
-        x0 = [0.0]
-        res = optimize.minimize(obj,x0,bounds=((0,None),),method='L-BFGS-B')
-        
-        #d. unpack solution
-        sol.h_star = res.x[0]
-        sol.y_star = y(sol.h_star)
-
-
-class lecture_5():
-    
-    def __init__(self):
-
-        par = self.par = SimpleNamespace()
-
-        # a. parameters
-        par.alpha = 0.5
-        par.beta = 0.5
-        par.A = 20
-        par.L = 24
-
-        # b. grids
-        par.grid_p = np.linspace(0.1,1.5,10)
-        par.grid_mkt_clearing = np.zeros(10)
-
-        # c. solution
-        sol = self.sol = SimpleNamespace()
-        
-        sol.p = 1 # output price
-
-    def firm(self):
-        """ maximize firm profits """
-            
-        par = self.par
-        sol = self.sol
-
-        p = sol.p
-
-        # a. solve
-        f = lambda h: par.A*h**par.beta
-        obj = lambda h: -(p*f(h)-h)
-        x0 = [0.0]
-        res = optimize.minimize(obj,x0,bounds=((0,par.L),),method='L-BFGS-B')
-            
-        # b. save
-        sol.h_star = res.x[0]
-        sol.y_star = f(sol.h_star)
-        sol.pi = p*sol.y_star-sol.h_star
-
-    def utility_c(self,c,h):
-        """ utility of consumer """
-
-        par = self.par
-
-        return c**par.alpha*h**(1-par.alpha)
-
-    def consumer(self):
-        """ maximize utility of consumer """
-        par = self.par
-        sol = self.sol
-
-        p = sol.p
-        pi = sol.pi
-
-        # a. solve
-        obj = lambda h: -self.utility_c(par.alpha*(h+pi)/p,h) 
-        res = optimize.minimize_scalar(obj,bounds=(0,1),method='bounded')
-        
-        # b. save
-        sol.h_star = res.x
-        sol.c_star = (sol.h_star+pi)/p
-        sol.l_star = (1-par.alpha)*(pi+sol.h_star)
-
-    def evaluate_equilibrium(self):
-        """ evaluate equilirium """
-        
-        par = self.par
-        sol = self.sol
-
-        # a. optimal behavior of firm
-        self.firm()
-
-        # b. optimal behavior of households
-        self.consumer()
-
-        # c. market clearing
-        sol.goods_mkt_clearing = sol.y_star - sol.c_star
-        sol.labor_mkt_clearing = par.L - sol.l_star-sol.h_star
-    
-    def find_equilibrium(self):
-
-        par = self.par
-        sol = self.sol
-
-        # a. grid search
-        print('grid search:')
-        for i,p in enumerate(par.grid_p):
-            sol.p = p
-            self.evaluate_equilibrium()
-            par.grid_mkt_clearing[i] = sol.goods_mkt_clearing
-            print(f' p = {p:.2f} -> {par.grid_mkt_clearing[i]:12.8f}')
-        
-        print('')
-
-        # b. find bounds
-        left = np.max(par.grid_p[par.grid_mkt_clearing < 0])
-        right = np.min(par.grid_p[par.grid_mkt_clearing > 0])
-        print(f'equilibrium price must be in [{left:.2f},{right:.2f}]\n')            
-
-        # c. bisection search
-        def obj(p):
-            sol.p = p
-            self.evaluate_equilibrium()
-            return sol.goods_mkt_clearing
-
-        res = optimize.root_scalar(obj,bracket=[left,right],method='bisect')
-        sol.p = res.root
-        print(f'the equilibrium wage is {sol.w:.4f}\n')
-
-        # d. show result
-        u = self.utility_c(sol.c_star,sol.h_star)
-        print(f'capitalists  : c = {sol.c_star:6.4f}, h = {sol.h_star:6.4f}, u = {u:7.4f}')        
-        print(f'goods market : {sol.goods_mkt_clearing:.8f}')
-        print(f'labor market : {sol.labor_mkt_clearing:.8f}')
