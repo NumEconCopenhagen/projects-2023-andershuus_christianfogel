@@ -72,7 +72,7 @@ class numerical_solution_ces():
 
     def utility(self,c,l):
         par = self.par
-        return -(c**((par.sigma-1)/par.sigma)*l**((par.sigma-1)/par.sigma))**(par.sigma/(par.sigma-1))
+        return -(c**((par.sigma-1)/par.sigma)+l**((par.sigma-1)/par.sigma))**(par.sigma/(par.sigma-1))
 
     def utility_optimize(self,x):
         par = self.par
@@ -142,7 +142,7 @@ class numerical_solution_ces():
                 labor_clearing=self.market_clearing(p)[1]
                 consumption=self.maximize_utility(p)[0]
 
-                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}. Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. Consumption = {consumption:.2f}')
+                print(f' Step {i:.2f}: Beta = {par.beta:.2f}. Sigma = {par.sigma:.2f}  p = {p:.2f} -> {f:12.8f}. Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. Consumption = {consumption:.2f}')
                 break
             elif self.market_clearing(p_lower)[0]*f<0:
                 p_upper=p
