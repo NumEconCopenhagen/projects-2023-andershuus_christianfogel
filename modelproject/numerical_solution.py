@@ -150,16 +150,25 @@ class numerical_solution():
         return goods_market_clearing, labor_market_clearing
     
     def find_relative_price(self,tol=1e-4,iterations=500, p_lower=0.25, p_upper=0.75):
-        "find price that causes markets to clear"
+        """""
+        This function finds theprice that causes markets to clear. 
+        The function takes arguments specified in step 2 of the algorithm
+        The functions until now all cover step 1.
+        """
 
         #Initial values.                                                                                                       
         i=0
 
+        #step 3-7 in algorithm
         while i<iterations: 
             
+            #step 4 in algorithm
             p=(p_lower+p_upper)/2
+
+            #step 5 in algorithm
             f = self.market_clearing(p)[0]
 
+            #step 3+6-7 in algorithm
             if np.abs(f)<tol: 
                 good_clearing=self.market_clearing(p)[0]
                 labor_clearing=self.market_clearing(p)[1]
