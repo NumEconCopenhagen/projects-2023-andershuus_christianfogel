@@ -194,7 +194,7 @@ class numerical_solution():
         #c. output
         return u
 
-    def income(self):
+    def income(self,p):
         "consumer's income/budget constraint"
 
         #a. unpack
@@ -202,7 +202,11 @@ class numerical_solution():
         sol = self.sol
 
         #b. budget constraint. Minus because the income is defined negatively in order to optimize. 
-        sol.Inc = sol.pi_star+par.L
+
+
+        h_inc,y_inc,pi_inc=self.firm_profit_maximization(p)
+
+        sol.Inc = pi_inc+par.L
 
         #c. output
         return sol.Inc
@@ -215,8 +219,10 @@ class numerical_solution():
         sol = self.sol
 
         # a. solve using standard solutions
-        sol.c_star = par.alpha*sol.Inc/p
-        sol.l_star = (1-par.alpha)*sol.Inc
+        utility_inc=self.income(p)
+
+        sol.c_star = par.alpha*utility_inc/p
+        sol.l_star = (1-par.alpha)*utility_inc
 
         return sol.c_star, sol.l_star
 
@@ -237,8 +243,6 @@ class numerical_solution():
         constraint = sol.Inc-p*self.utility[0]-par.L-sol.h_star
         ineq_con = {'type': 'ineq', 'fun': constraint} 
 
-    
-        #sol_h = optimize.minimize(self.firm_profit,x0,args =(p,),bounds=bounds,method='L-BFGS-B')
 
         # b. call optimizer
         sol_con = optimize.minimize(self.utility,x0,
@@ -258,30 +262,53 @@ class numerical_solution():
         sol = self.sol
 
         #b. optimal behavior of firm
-        self.firm_profit_maximization(p)
+        h,y,pi=self.firm_profit_maximization(p)
 
         #c. optimal behavior of consumer
-        self.maximize_utility(p)
+        c,l=self.maximize_utility(p)
 
         #b. market clearing
-        goods_market_clearing = sol.y_star - sol.c_star
-        labor_market_clearing = sol.h_star - par.L + sol.l_star
+        goods_market_clearing = y - c
+        labor_market_clearing = h - par.L + l
 
         return goods_market_clearing, labor_market_clearing
     
-    def find_relative_price(self):
+    def find_relative_price(self,tol=1e-8,iterations=500, p_guess=0.5, delta=1e-8, adj=0.5):
         "find price that causes markets to clear"
 
         # a. unpack
         par = self.par
         sol = self.sol
 
-        p_guess = 1.0
+        #Initial values.                                                                                                       
+        i=0
+        p=p_guess
 
-        p_opt = optimize.root_scalar(self.market_clearing(p)[0], bracket=[0.1, 10], x0=p_guess, method='brentq')
-        sol.p_star = p_opt.root
+        while i<iterations: 
+            
+            f = self.market_clearing(p)[0]
+            fp = (self.market_clearing(p+delta)[0]-f)/delta
 
-        return sol.p_star
+            if np.abs(fp)<tol: 
+                print(f' p = {p:.2f} -> {self.market_clearing(p)[0]:12.8f}')
+                break
+            else: 
+                #print(self.market_clearing(p)[0]) 
+                print(f' higher value = {self.market_clearing(p+delta)[0]:.5f} - f = {self.market_clearing(p)[0]:.5f}')
+                print(f' p = {p:.2f} -> fp = {fp:.2f} -> {self.market_clearing(p)[0]:12.8f}')
+                p=p-adj*fp
+                if p < 0:
+                    p=1e-5
+
+
+
+            i+=1
+        return p
+
+        #p_opt = optimize.root_scalar(self.market_clearing(p)[0], bracket=[0.1, 10], x0=p_guess, method='brentq')
+        #sol.p_star = p_opt.root
+
+        #return sol.p_star
 
 
 
