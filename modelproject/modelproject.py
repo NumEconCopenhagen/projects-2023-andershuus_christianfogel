@@ -1,3 +1,4 @@
+import platformdirs
 from scipy import optimize
 import numpy as np
 import ipywidgets as widgets # Interactive plots
@@ -263,29 +264,25 @@ class numerical_solution():
         self.maximize_utility(p)
 
         #b. market clearing
-        goods_market_claering = sol.y_star - sol.c_star
+        goods_market_clearing = sol.y_star - sol.c_star
         labor_market_clearing = sol.h_star - par.L + sol.l_star
 
-        return goods_market_claering, labor_market_clearing
+        return goods_market_clearing, labor_market_clearing
     
-    def solve(self):
+    def find_relative_price(self):
         "find price that causes markets to clear"
 
         # a. unpack
         par = self.par
         sol = self.sol
 
-        #b. initial guess
         p_guess = 1.0
 
-        #c. tolerance
-        tolerance = 1e-8
+        p_opt = optimize.root_scalar(self.market_clearing(p)[0], bracket=[0.1, 10], x0=p_guess, method='brentq')
+        sol.p_star = p_opt.root
 
-        #d. iterations
-        max_iterations=500
-        i = 0
+        return sol.p_star
 
-        
 
 
 
