@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from types import SimpleNamespace
 from scipy.optimize import minimize
 
-class numerical_solution():
+class numerical_solution_ces():
 
     def __init__(self):
 
@@ -17,7 +17,7 @@ class numerical_solution():
         par.beta = 0.5
         par.A = 20
         par.L = 75
-        par.sigma = 0.98
+        par.sigma=0.99
 
         # b. solution
         sol = self.sol = SimpleNamespace()
@@ -72,61 +72,36 @@ class numerical_solution():
 
     def utility(self,c,l):
         par = self.par
-        return par.sigma
-        #return -(c**((par.sigma-1)/par.sigma)*l**((par.sigma-1)/par.sigma))**(par.sigma/(par.sigma-1))
+        return -(c**((par.sigma-1)/par.sigma)*l**((par.sigma-1)/par.sigma))**(par.sigma/(par.sigma-1))
 
-    def objective(self,x):
+    def utility_optimize(self,x):
         par = self.par
         return self.utility(x[0],x[1])
         
     def ineq_constraint(self,x,p):
         par = self.par
-        h_constraint, y_constraint, pi_constraint = self.firm_profit_maximization(self,p)
-        return pi_constraint+self.L-(p*x[0]+x[1]) # violated if negative
-    def optimize(self,p): 
+        h_constraint, y_constraint, pi_constraint = self.firm_profit_maximization(p)
+        return pi_constraint+par.L-(p*x[0]+x[1]) # violated if negative
+    def maximize_utility(self,p): 
+        par = self.par
         # a. setup
-        bounds = ((0,np.inf),(0,self.L))
+        bounds = ((0,np.inf),(0,par.L))
         #constraint = ineq_constraint(p)
         ineq_con = {'type': 'ineq', 'fun': self.ineq_constraint,'args': (p,)} 
 
         # b. call optimizer
         x0 = (25,8) # fit the equality constraint
-        result = minimize(self.objective,x0,
+        result = minimize(self.utility_optimize,x0,
                                     method='SLSQP',
                                     bounds=bounds,
                                     constraints=[ineq_con],
-                                    options={'disp':True})
+                                    options={'disp':False})
 
         c_star, l_star = result.x
         
         return c_star, l_star
-
-        #a. unpack
-        par = self.par
-        sol = self.sol
-
-        #b. call optimizer
-        #Bounds
-        bounds = ((0,np.inf),(0,par.L))
-        #Initial guess
-        x0=[25,8]
-
-        #Constraints. The income must be equal to or greater than the income. We first define l 
-        constraint = sol.Inc-p*self.utility[0]-par.L-sol.h_star
-        ineq_con = {'type': 'ineq', 'fun': constraint} 
-
-
-        # b. call optimizer
-        sol_con = optimize.minimize(self.utility,x0,
-                             method='SLSQP',
-                             bounds=bounds,
-                             constraints=[ineq_con],
-                             options={'disp':True})
-        c_star = sol_con.x[0]
-        l_star = sol_con.x[1]
-
-        return c_star, l_star
     
+
     def market_clearing(self,p):
         "calculating the excess demand of the good and working hours"
         #a. unpack
@@ -165,7 +140,9 @@ class numerical_solution():
             if np.abs(f)<tol: 
                 good_clearing=self.market_clearing(p)[0]
                 labor_clearing=self.market_clearing(p)[1]
-                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}. Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. ')
+                consumption=self.maximize_utility(p)[0]
+
+                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}. Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. Consumption = {consumption:.2f}')
                 break
             elif self.market_clearing(p_lower)[0]*f<0:
                 p_upper=p
