@@ -72,7 +72,7 @@ def interactive_figure(beta,A):
         p_vec[i] = consumption(alpha,beta,A)[0]
     
     # c. Plotting the price over alpha
-    fig = plt.figure(figsize=(8, 5))
+    fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.plot(alpha_vec, p_vec, label='Price of consumption relative to leisure')
     ax.set_xlim([0.05,0.95]) # 
