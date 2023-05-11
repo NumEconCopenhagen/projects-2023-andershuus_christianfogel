@@ -1,13 +1,11 @@
 import platformdirs
 from scipy import optimize
 import numpy as np
-import ipywidgets as widgets # Interactive plots
 import matplotlib.pyplot as plt
 from types import SimpleNamespace
-from scipy.optimize import minimize
 
-class numerical_solution_ces():
-
+class numerical_solution():
+    
     def __init__(self):
 
         par = self.par = SimpleNamespace()
@@ -17,19 +15,9 @@ class numerical_solution_ces():
         par.beta = 0.5
         par.A = 20
         par.L = 75
-        par.sigma=0.99
 
         # b. solution
         sol = self.sol = SimpleNamespace()
-        
-        sol.p = 1 # output price
-        sol.w = 1 # wage
-        sol.c = 1 # consumption
-        sol.l = 1 # leisure
-        sol.h = 1 # working hours
-        sol.y = 1 # production
-        sol.pi = 1 # profit
-        sol.Inc = 1 # income
 
     def production_function(self,h):
         "production function of the firm"
@@ -70,41 +58,79 @@ class numerical_solution_ces():
 
         return sol.h_star, sol.y_star, sol.pi_star
 
-    def utility(self,c,l):
-        "CES-utility function"
-        par = self.par
-        return -(c**((par.sigma-1)/par.sigma)+l**((par.sigma-1)/par.sigma))**(par.sigma/(par.sigma-1))
+    def utility(self,c,h):
+        "utility of the consumer"
 
-    def utility_optimize(self,x):
+        #a. unpack
         par = self.par
-        return self.utility(x[0],x[1])
+
+        #b. utility
+        u = c**par.alpha*(par.L-h)**(1-par.alpha)
+
+        #c. output
+        return u
+
+    def income(self,p):
+        "consumer's income/budget constraint"
+
+        #a. unpack
+        par = self.par
+        sol = self.sol
+
+        #b. budget constraint. Minus because the income is defined negatively in order to optimize. 
+
+
+        h_inc,y_inc,pi_inc=self.firm_profit_maximization(p)
+
+        sol.Inc = pi_inc+par.L
+
+        #c. output
+        return sol.Inc
+
+
+    def maximize_utility(self,p):
         
-    def ineq_constraint(self,x,p):
+        # a.unpack
         par = self.par
-        h_constraint, y_constraint, pi_constraint = self.firm_profit_maximization(p)
-        return pi_constraint+par.L-(p*x[0]+x[1]) # violated if negative
-    
-    def maximize_utility(self,p): 
-        "maximize utility using an optimizer"
+        sol = self.sol
+
+        # a. solve using standard solutions
+        utility_inc=self.income(p)
+
+        sol.c_star = par.alpha*utility_inc/p
+        sol.l_star = (1-par.alpha)*utility_inc
+
+        return sol.c_star, sol.l_star
+
+
+    def utility_maximization(self,p): 
+
+        #a. unpack
         par = self.par
-        # a. setup
+        sol = self.sol
+
+        #b. call optimizer
+        #Bounds
         bounds = ((0,np.inf),(0,par.L))
-        #constraint = ineq_constraint(p)
-        ineq_con = {'type': 'ineq', 'fun': self.ineq_constraint,'args': (p,)} 
+        #Initial guess
+        x0=[25,8]
+
+        #Constraints. The income must be equal to or greater than the income. We first define l 
+        constraint = sol.Inc-p*self.utility[0]-par.L-sol.h_star
+        ineq_con = {'type': 'ineq', 'fun': constraint} 
+
 
         # b. call optimizer
-        x0 = (25,8) # fit the equality constraint
-        result = minimize(self.utility_optimize,x0,
-                                    method='SLSQP',
-                                    bounds=bounds,
-                                    constraints=[ineq_con],
-                                    options={'disp':False})
+        sol_con = optimize.minimize(self.utility,x0,
+                             method='SLSQP',
+                             bounds=bounds,
+                             constraints=[ineq_con],
+                             options={'disp':True})
+        c_star = sol_con.x[0]
+        l_star = sol_con.x[1]
 
-        c_star, l_star = result.x
-        
         return c_star, l_star
     
-
     def market_clearing(self,p):
         "calculating the excess demand of the good and working hours"
         #a. unpack
@@ -126,10 +152,6 @@ class numerical_solution_ces():
     def find_relative_price(self,tol=1e-4,iterations=500, p_lower=0.25, p_upper=0.75):
         "find price that causes markets to clear"
 
-        # a. unpack
-        par = self.par
-        sol = self.sol
-
         #Initial values.                                                                                                       
         i=0
 
@@ -137,15 +159,11 @@ class numerical_solution_ces():
             
             p=(p_lower+p_upper)/2
             f = self.market_clearing(p)[0]
-            #Approximation of derivative. 
-            #fp = (self.market_clearing(p+delta)[0]-f)/delta
 
             if np.abs(f)<tol: 
                 good_clearing=self.market_clearing(p)[0]
                 labor_clearing=self.market_clearing(p)[1]
-                consumption=self.maximize_utility(p)[0]
-
-                print(f' Step {i:.2f}: Beta = {par.beta:.2f}. Sigma = {par.sigma:.2f}  p = {p:.2f} -> {f:12.8f}. Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. Consumption = {consumption:.2f}')
+                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}. Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. ')
                 break
             elif self.market_clearing(p_lower)[0]*f<0:
                 p_upper=p
