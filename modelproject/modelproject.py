@@ -291,17 +291,19 @@ class numerical_solution():
             #fp = (self.market_clearing(p+delta)[0]-f)/delta
 
             if np.abs(f)<tol: 
-                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}')
+                good_clearing=self.market_clearing(p)[0]
+                labor_clearing=self.market_clearing(p)[1]
+                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}. Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. ')
                 break
             elif self.market_clearing(p_lower)[0]*f<0:
                 p_upper=p
-                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}')
+                #print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}')
             elif self.market_clearing(p_upper)[0]*f<0:
                 p_lower=p
-                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}')
+                #print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}')
             else: 
                 print("Fail")
                 return None
             
             i+=1
-        return p
+        return p, good_clearing, labor_clearing
