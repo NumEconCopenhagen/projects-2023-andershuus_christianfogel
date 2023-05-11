@@ -17,7 +17,7 @@ class numerical_solution_ces():
 
         par.beta = 0.5
         par.A = 20
-        par.L = 24
+        par.L = 75
         par.sigma=0.99
 
         # b. solution
