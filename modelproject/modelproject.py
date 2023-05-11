@@ -167,6 +167,7 @@ class numerical_solution():
 
         #a. unpack
         par = self.par
+        sol = self.sol
 
         #b. call optimizer
         bound = ((0,par.L),)
@@ -174,12 +175,11 @@ class numerical_solution():
         sol_h = optimize.minimize(self.firm_profit,x0,args = (p,),bounds=bound,method='L-BFGS-B')
 
         #c. unpack solution
-        h_star = sol_h.x[0]
-        y_star = self.production_function(h_star)
+        sol.h_star = sol_h.x[0]
+        sol.y_star = self.production_function(sol.h_star)
+        sol.pi_star = p*sol.y_star-sol.h_star
 
-
-        return h_star,y_star
-
+        return sol.h_star, sol.y_star, sol.pi_star
 
     def utility(self,c,h):
         "utility of the consumer"
@@ -193,22 +193,38 @@ class numerical_solution():
         #c. output
         return u
 
-    def income(self,h,p):
+    def income(self):
         "consumer's income/budget constraint"
 
         #a. unpack
         par = self.par
+        sol = self.sol
 
         #b. budget constraint. Minus because the income is defined negatively in order to optimize. 
-        Inc = -self.firm_profit(h,p)+par.L
+        sol.Inc = sol.pi_star+par.L
 
         #c. output
-        return Inc
+        return sol.Inc
+
+
+    def maximize_utility(self,p):
+        
+        # a.unpack
+        par = self.par
+        sol = self.sol
+
+        # a. solve using standard solutions
+        sol.c_star = par.alpha*sol.Inc/p
+        sol.l_star = (1-par.alpha)*sol.Inc
+
+        return sol.c_star, sol.l_star
+
 
     def utility_maximization(self,p): 
 
         #a. unpack
         par = self.par
+        sol = self.sol
 
         #b. call optimizer
         #Bounds
@@ -217,7 +233,7 @@ class numerical_solution():
         x0=[25,8]
 
         #Constraints. The income must be equal to or greater than the income. We first define l 
-        constraint = self.income-p*x[0]-par.L-x[1]
+        constraint = sol.Inc-p*self.utility[0]-par.L-sol.h_star
         ineq_con = {'type': 'ineq', 'fun': constraint} 
 
     
@@ -232,22 +248,49 @@ class numerical_solution():
         c_star = sol_con.x[0]
         l_star = sol_con.x[1]
 
-
-
-
-    
+        return c_star, l_star
     
     def market_clearing(self,p):
+        "calculating the excess demand of the good and working hours"
         #a. unpack
         par = self.par
+        sol = self.sol
+
+        #b. optimal behavior of firm
+        self.firm_profit_maximization(p)
+
+        #c. optimal behavior of consumer
+        self.maximize_utility(p)
 
         #b. market clearing
-        goods_market_claering = self.production_function-c
-        labor_market_clearing = h - par.L + l
+        goods_market_claering = sol.y_star - sol.c_star
+        labor_market_clearing = sol.h_star - par.L + sol.l_star
 
         return goods_market_claering, labor_market_clearing
     
-    
+    def solve(self):
+        "find price that causes markets to clear"
+
+        # a. unpack
+        par = self.par
+        sol = self.sol
+
+        #b. initial guess
+        p_guess = 1.0
+
+        #c. tolerance
+        tolerance = 1e-8
+
+        #d. iterations
+        max_iterations=500
+        i = 0
+
+        
+
+
+
+
+
     
     def solve(self):
 
