@@ -81,8 +81,7 @@ class HouseholdSpecializationModelClass:
         elif par.sigma == 1:
             H = HM**(1-par.alpha)*HF**par.alpha
         else:
-            H= ((1-par.alpha)*HM**((par.sigma-1)/par.sigma)+
-                par.alpha*HF**((par.sigma-1)/par.sigma))**(par.sigma/(par.sigma-1))
+            H= ((1-par.alpha)*HM**((par.sigma-1)/par.sigma)+par.alpha*HF**((par.sigma-1)/par.sigma))**(par.sigma/(par.sigma-1))
 
         # c. total consumption utility
         Q = C**par.omega*H**(1-par.omega)
@@ -96,7 +95,7 @@ class HouseholdSpecializationModelClass:
         
         return utility - disutility
 
-    def solve_discrete(self,do_print=False):
+    def solve_discrete(self):
         """ This code solves the model distretly
         See utility for code input. We only assume that the working hours can be divided
         in half hours intervals. 
@@ -107,7 +106,10 @@ class HouseholdSpecializationModelClass:
         opt = self.opt
         
         # a. all possible choices as defined above. 
-        x = np.linspace(0,24,49)
+        x = np.linspace(0+1e-8,24,49)
+        #note, we start from a small number just above 0, because when sigma = 0.5 then the exponent of H
+        # will be equal to -1, and we cannot have 1/0.
+
         LM,HM,LF,HF = np.meshgrid(x,x,x,x) # all combinations in one meshgrid. 
     
         # Making the vectors for the 4 variables. 
@@ -136,7 +138,7 @@ class HouseholdSpecializationModelClass:
         opt.HF_HM = HF[j]/HM[j] 
 
         return opt
-
+    
     def print_table_q1(self):
         
         # a. load parameters
@@ -168,8 +170,8 @@ class HouseholdSpecializationModelClass:
             #Plotting values of HF/HM
             for sigma in np.linspace(0.5,1.5,3): 
                 par.sigma=sigma
-                dsol = self.solve_discrete() #call the solve function
-                text += f'{dsol.HF_HM:8.2f}' #plot values 
+                sol = self.solve_discrete() #call the solve function
+                text += f'{sol.HF_HM:8.2f}' #plot values 
         
         #e. reset values of alpha and sigma. This is necessary to avoid problems later in the following questions. 
         par.alpha = 0.5
@@ -177,24 +179,21 @@ class HouseholdSpecializationModelClass:
         
         # f. Printing the table
         print(f"Table of HF/HM values:\n{text}")
-    
+
     #We need negative value of utility function for the continuously function. 
     def utility_function(self, L): 
-        return -self.calc_utility(L[0],L[1],L[2],L[3])
+        return -self.calc_utility(L[0],L[1],L[2],L[3])*100
     
     def solve_continuously(self):
         """Input are the same as for the discrete case"""
         par = self.par
         opt = self.opt
         
-
         #Define the bounds and constraints. 
         constraint_men = ({'type': 'ineq', 'fun': lambda L:  24-L[0]-L[1]})
         constraint_women = ({'type': 'ineq', 'fun': lambda L:  24-L[2]-L[3]})
         bounds=((0,24),(0,24), (0,24), (0,24))
-        
-        # Initial guess. This can change the results as noted for question 3. 
-        initial_guess = [6,6,6,6]
+        initial_guess=[6,6,6,6]
 
         # Call optimizer based on the input above
         solution_cont = optimize.minimize(
@@ -209,7 +208,7 @@ class HouseholdSpecializationModelClass:
 
         #Calculating the ratio
         opt.HF_HM = solution_cont.x[3]/solution_cont.x[1] #calculate ratio
-        
+
         return opt
     
     def solve_wF_vec(self, discrete=False):
