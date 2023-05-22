@@ -192,6 +192,7 @@ class HouseholdSpecializationModelClass:
         #Define the bounds and constraints. 
         constraint_men = ({'type': 'ineq', 'fun': lambda L:  24-L[0]-L[1]})
         constraint_women = ({'type': 'ineq', 'fun': lambda L:  24-L[2]-L[3]})
+        #Hours worked cannot be 0 as we will divide with 0 when sigma is equal to 0.5. Therefore, leisure can also just be below 24 hours. 
         bounds=((0,24-1e-8),(0+1e-8,24), (0,24-1e-8), (0+1e-8,24))
         initial_guess=[6,6,6,6]
 
@@ -242,7 +243,6 @@ class HouseholdSpecializationModelClass:
     #Defining the target function for question 4. Step 1 in the algorithm described in section 4. 
     def target(self, params):
         par = self.par
-        opt = self.opt 
         alpha_target, sigma_target = params
         beta0_target=0.4
         beta1_target=-0.1

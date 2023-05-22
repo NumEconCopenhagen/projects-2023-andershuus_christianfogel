@@ -14,7 +14,7 @@ class HouseholdSpecializationModelClass:
         nu 
         epsilon
         omega
-        psi - measure relative disutility for men working relative to women working
+        psi - measure relative disutility for men working at home. 
         alpha - Decides the relative productivity of men and women in the home
         sigma - Decides the degree of substitution. 
         wM - Wages for men. A numeraire
@@ -94,7 +94,7 @@ class HouseholdSpecializationModelClass:
         epsilon_ = 1+1/par.epsilon
         TM = LM+HM
         TF = LF+HF
-        disutility = par.nu*(par.psi*TM**epsilon_/epsilon_+TF**epsilon_/epsilon_)
+        disutility = par.nu*(TM**epsilon_/epsilon_+TF**epsilon_/epsilon_)+par.psi*HM
         
         return utility - disutility
 
@@ -109,6 +109,7 @@ class HouseholdSpecializationModelClass:
         #Define the bounds and constraints. 
         constraint_men = ({'type': 'ineq', 'fun': lambda L:  24-L[0]-L[1]})
         constraint_women = ({'type': 'ineq', 'fun': lambda L:  24-L[2]-L[3]})
+        
         bounds=((0,24-1e-8),(0+1e-8,24), (0,24-1e-8), (0+1e-8,24))
         initial_guess=[6,6,6,6]
 
@@ -154,7 +155,6 @@ class HouseholdSpecializationModelClass:
     #Defining the target function for question 4. Step 1 in the algorithm described in section 4. 
     def target(self, params):
         par = self.par
-        opt = self.opt 
         sigma_target,psi_target = params
         beta0_target=0.4
         beta1_target=-0.1
@@ -164,7 +164,6 @@ class HouseholdSpecializationModelClass:
         return (beta0_target-beta0)**2+(beta1_target-beta1)**2
     
     #Step 3 in described algorithm. 
-    #Deleted alpha_optimal
     def run_regression(self, sigma_optimal,psi_optimal):
         """ This regression is for question 4 and 5 
         Our input is the value from the solve_wF_Vec"""
@@ -186,7 +185,7 @@ class HouseholdSpecializationModelClass:
         return opt.beta0,opt.beta1
 
     #Step 4 in the described algoirthm. 
-    def solve_optimal_sigma(self,used_seed):
+    def solve_optimal_sigma_psi(self,used_seed):
         #Setting a random seed
         np.random.seed(used_seed)
 
@@ -195,7 +194,7 @@ class HouseholdSpecializationModelClass:
 
         #Bounds for sigma and psi. We set the lower bound for psi to be 1, because we know men need higher 
         # disutility of working for the model to fit better
-        bounds = [(0.01, 100), (1.0,100)]
+        bounds = [(0.01, 100), (-10,10)]
 
         #Optimize. We use Nelder-Mead now because we do not have constraints
         result = optimize.minimize(self.target,init_guess, method='Nelder-Mead', bounds=bounds)
