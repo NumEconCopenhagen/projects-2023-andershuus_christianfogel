@@ -136,6 +136,47 @@ class HouseholdSpecializationModelClass:
         opt.HF_HM = HF[j]/HM[j] 
 
         return opt
+
+    def print_table_q1(self):
+        
+        # a. load parameters
+        par = self.par
+
+        # b. empty text for a start
+        text = ''
+        
+        # c. write alpha/Sigma in the corner of the code
+        text += f'{"Alpha/Sigma":<7s}{"":1s}'
+
+        # b. making the sigma values as the column values. 
+        for sigma in np.linspace(0.5,1.5,3):
+            par.sigma=sigma
+            text += f'{sigma:8.2f}'
+        text += '\n' + '-'*40 + '\n' # we add horizontal separator
+        
+        # d. Making the rows. 
+        for i,alpha in enumerate(np.linspace(0.25,0.75,3)):
+            par.alpha=alpha 
+            
+            #We need i>0 to avoid a blank row as the first row, so a layout fix. 
+            if i > 0: 
+                text += '\n'
+            
+            #alpha as row-values and with a vertical separator
+            text += f'{alpha:10.2f} |' 
+
+            #Plotting values of HF/HM
+            for sigma in np.linspace(0.5,1.5,3): 
+                par.sigma=sigma
+                dsol = self.solve_discrete() #call the solve function
+                text += f'{dsol.HF_HM:8.2f}' #plot values 
+        
+        #e. reset values of alpha and sigma. This is necessary to avoid problems later in the following questions. 
+        par.alpha = 0.5
+        par.sigma = 1.0
+        
+        # f. Printing the table
+        print(f"Table of HF/HM values:\n{text}")
     
     #We need negative value of utility function for the continuously function. 
     def utility_function(self, L): 
