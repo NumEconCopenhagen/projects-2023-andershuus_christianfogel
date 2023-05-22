@@ -3,9 +3,6 @@ from types import SimpleNamespace
 import numpy as np
 from scipy import optimize
 
-import pandas as pd 
-import matplotlib.pyplot as plt
-
 class HouseholdSpecializationModelClass:
     
     def __init__(self):
@@ -140,7 +137,10 @@ class HouseholdSpecializationModelClass:
         return opt
     
     def print_table_q1(self):
-        
+        """ This code prints a cross tabel for the discrete solution given in question 2 for different values of alpha and sigma. 
+        See utility for code input. 
+        """
+
         # a. load parameters
         par = self.par
 
@@ -185,7 +185,10 @@ class HouseholdSpecializationModelClass:
         return -self.calc_utility(L[0],L[1],L[2],L[3])*100
     
     def solve_continuously(self):
-        """Input are the same as for the discrete case"""
+        """
+        This code solves the model with continuously choice variables for working hours (at work and home)
+        We use SLSQP for optimizing because we want to insert bounds and constraints.
+        Input are the same as for the discrete case"""
         par = self.par
         opt = self.opt
         
@@ -196,7 +199,7 @@ class HouseholdSpecializationModelClass:
         bounds=((0,24-1e-8),(0+1e-8,24), (0,24-1e-8), (0+1e-8,24))
         initial_guess=[6,6,6,6]
 
-        # Call optimizer based on the input above. We use SLSQP because we want to insert bounds and constraints.
+        # Call optimizer based on the input above.
         solution_cont = optimize.minimize(
         self.utility_function, initial_guess,
         method='SLSQP', bounds=bounds, constraints=(constraint_men, constraint_women))
@@ -208,13 +211,14 @@ class HouseholdSpecializationModelClass:
         opt.HF = solution_cont.x[3]
 
         #Calculating the ratio
-        opt.HF_HM = solution_cont.x[3]/solution_cont.x[1] #calculate ratio
+        opt.HF_HM = solution_cont.x[3]/solution_cont.x[1] 
 
         return opt
     
     def solve_wF_vec(self, discrete=False):
-        """ solve model for vector of female wages 
-        For discrete case we use discrete=True and discrete=False for the continuous model
+        """Solve model for vector of female relative wages to men as men's wage is numeraire. 
+        For discrete case we use discrete=True and discrete=False for the continuous model. 
+        This is also step 2 in the described algorithm for question 4. 
         """
 
         par = self.par
@@ -235,8 +239,8 @@ class HouseholdSpecializationModelClass:
                 opt = self.solve_continuously()
                 log_HF_HM[i] = np.log(opt.HF_HM)
 
-        par.wF = 1.0
         #We return wF to original value
+        par.wF = 1.0
         return log_HF_HM #Return the vector of log ratio of HF/HM
 
 
@@ -263,7 +267,7 @@ class HouseholdSpecializationModelClass:
         par.alpha=alpha_optimal
         par.sigma=sigma_optimal
 
-
+        #Defining the x and y values for the regression.
         x = np.log(par.wF_vec)
         y = self.solve_wF_vec(discrete=False)
         A = np.vstack([np.ones(x.size),x]).T
@@ -273,9 +277,11 @@ class HouseholdSpecializationModelClass:
 
         return opt.beta0,opt.beta1
 
-    #Step 4 in the described algoirthm. 
+    #Step 4 in the described algoirthm for question 4. 
     def solve_optimal_alpha_sigma(self,used_seed):
-        #Setting a random seed
+        """ This is to find optimal value of alpha and sigma for question 4
+        We use Nelder-Mead because we do not have constraints"""
+        #Setting a random seed. We will loop over the seed in order to make robustness checks. 
         np.random.seed(used_seed)
 
         #Defining the initial guess based on the seed. 
@@ -284,7 +290,6 @@ class HouseholdSpecializationModelClass:
         #Bounds for alpha and sigma. 
         bounds = [(0.01, 1-1e-8), (0.01, 100)]
 
-        #Optimize. We use Nelder-Mead now because we do not have constraints
         result = optimize.minimize(self.target,init_guess, method='Nelder-Mead', bounds=bounds)
 
         #Saving result from the optimizer. 

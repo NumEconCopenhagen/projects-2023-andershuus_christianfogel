@@ -3,8 +3,6 @@ from types import SimpleNamespace
 import numpy as np
 from scipy import optimize
 
-import pandas as pd 
-import matplotlib.pyplot as plt
 
 class HouseholdSpecializationModelClass:
     
@@ -103,6 +101,10 @@ class HouseholdSpecializationModelClass:
         return -self.calc_utility(L[0],L[1],L[2],L[3])*100
     
     def solve_continuously(self):
+        """
+        This code solves the model with continuously choice variables for working hours (at work and home)
+        We use SLSQP for optimizing because we want to insert bounds and constraints.
+        Input are the same as for the discrete case"""
         par = self.par
         opt = self.opt
         
@@ -113,7 +115,7 @@ class HouseholdSpecializationModelClass:
         bounds=((0,24-1e-8),(0+1e-8,24), (0,24-1e-8), (0+1e-8,24))
         initial_guess=[6,6,6,6]
 
-        # Call optimizer based on the input above. We use SLSQP because we want to insert bounds and constraints.
+        # Call optimizer based on the input above. 
         solution_cont = optimize.minimize(
         self.utility_function, initial_guess,
         method='SLSQP', bounds=bounds, constraints=(constraint_men, constraint_women))
@@ -130,7 +132,9 @@ class HouseholdSpecializationModelClass:
         return opt
     
     def solve_wF_vec(self):
-        """ solve model for vector of female wages 
+        """ Solve model for vector of female wages. The same as in HouseholdSpecializationModel except we do not have the
+        discrete case here. 
+        This is also step 2 in the described algorithm for question 4.
         """
 
         par = self.par
@@ -152,7 +156,7 @@ class HouseholdSpecializationModelClass:
         return log_HF_HM #Return the vector of log ratio of HF/HM
 
 
-    #Defining the target function for question 4. Step 1 in the algorithm described in section 4. 
+    #Defining the target function for question 5. Step 1 in the algorithm described in section 4. 
     def target(self, params):
         par = self.par
         sigma_target,psi_target = params
@@ -165,7 +169,7 @@ class HouseholdSpecializationModelClass:
     
     #Step 3 in described algorithm. 
     def run_regression(self, sigma_optimal,psi_optimal):
-        """ This regression is for question 4 and 5 
+        """ This regression is for question 5 
         Our input is the value from the solve_wF_Vec"""
 
         par = self.par
@@ -186,15 +190,17 @@ class HouseholdSpecializationModelClass:
 
     #Step 4 in the described algoirthm. 
     def solve_optimal_sigma_psi(self,used_seed):
-        #Setting a random seed
+        """ This is to find optimal value of sigma and psi for question 5
+        We use Nelder-Mead because we do not have constraints"""
+        #Setting a random seed. We will loop over the seed in order to make robustness checks. 
         np.random.seed(used_seed)
 
         #Defining the initial guess based on the seed. 
         init_guess = [np.random.uniform(0.01,1)]
 
-        #Bounds for sigma and psi. We set the lower bound for psi to be 1, because we know men need higher 
-        # disutility of working for the model to fit better
-        bounds = [(0.01, 100), (-10,10)]
+        #Bounds for sigma and psi. We set the lower bound for psi to be 0, because we know men need higher 
+        #disutility of working for the model to fit better. However, as noted in question 5 this is not a theoretical constraint. 
+        bounds = [(0.01, 100), (0,10)]
 
         #Optimize. We use Nelder-Mead now because we do not have constraints
         result = optimize.minimize(self.target,init_guess, method='Nelder-Mead', bounds=bounds)
