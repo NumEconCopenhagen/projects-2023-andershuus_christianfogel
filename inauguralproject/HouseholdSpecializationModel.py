@@ -192,10 +192,10 @@ class HouseholdSpecializationModelClass:
         #Define the bounds and constraints. 
         constraint_men = ({'type': 'ineq', 'fun': lambda L:  24-L[0]-L[1]})
         constraint_women = ({'type': 'ineq', 'fun': lambda L:  24-L[2]-L[3]})
-        bounds=((0,24),(0,24), (0,24), (0,24))
+        bounds=((0,24-1e-8),(0+1e-8,24), (0,24-1e-8), (0+1e-8,24))
         initial_guess=[6,6,6,6]
 
-        # Call optimizer based on the input above
+        # Call optimizer based on the input above. We use SLSQP because we want to insert bounds and constraints.
         solution_cont = optimize.minimize(
         self.utility_function, initial_guess,
         method='SLSQP', bounds=bounds, constraints=(constraint_men, constraint_women))
@@ -253,3 +253,8 @@ class HouseholdSpecializationModelClass:
 
         #Making the regression and returning the parameter estimates. 
         opt.beta0,opt.beta1 = np.linalg.lstsq(A,y,rcond=None)[0]
+
+
+
+
+
