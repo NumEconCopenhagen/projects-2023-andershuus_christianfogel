@@ -14,6 +14,7 @@ class HouseholdSpecializationModelClass:
         nu 
         epsilon
         omega
+        psi - measure relative disutility for men working relative to women working
         alpha - Decides the relative productivity of men and women in the home
         sigma - Decides the degree of substitution. 
         wM - Wages for men. A numeraire
@@ -33,6 +34,7 @@ class HouseholdSpecializationModelClass:
         par.nu = 0.001
         par.epsilon = 1.0
         par.omega = 0.5 
+        par.psi = 1.0
 
         # c. household production
         par.alpha = 0.5
@@ -65,6 +67,7 @@ class HouseholdSpecializationModelClass:
         Epsilon
         TM - Total working hours for men
         TF - Total working hours for women
+        Psi
         Nu
 
         """
@@ -87,105 +90,19 @@ class HouseholdSpecializationModelClass:
         Q = C**par.omega*H**(1-par.omega)
         utility = np.fmax(Q,1e-8)**(1-par.rho)/(1-par.rho)
 
-        # d. disutlity of work
+        # d. disutility of work. This is where we add our new parameter psi.
         epsilon_ = 1+1/par.epsilon
         TM = LM+HM
         TF = LF+HF
-        disutility = par.nu*(1.5*TM**epsilon_/epsilon_+TF**epsilon_/epsilon_)
+        disutility = par.nu*(par.psi*TM**epsilon_/epsilon_+TF**epsilon_/epsilon_)
         
         return utility - disutility
-
-    def solve_discrete(self):
-        """ This code solves the model distretly
-        See utility for code input. We only assume that the working hours can be divided
-        in half hours intervals. 
-        
-        """
-        
-        par = self.par
-        opt = self.opt
-        
-        # a. all possible choices as defined above. 
-        x = np.linspace(0+1e-8,24,49)
-        #note, we start from a small number just above 0, because when sigma = 0.5 then the exponent of H
-        # will be equal to -1, and we cannot have 1/0.
-
-        LM,HM,LF,HF = np.meshgrid(x,x,x,x) # all combinations in one meshgrid. 
-    
-        # Making the vectors for the 4 variables. 
-        LM = LM.ravel() 
-        HM = HM.ravel()
-        LF = LF.ravel()
-        HF = HF.ravel()
-
-        # b. calculate utility for all possible outcomes. 
-        u = self.calc_utility(LM,HM,LF,HF)
-    
-        # c. set to minus infinity if constraint is broken. Cannot work more than 24 hours per day
-        I = (LM+HM > 24) | (LF+HF > 24) # | is "or"
-        u[I] = -np.inf
-    
-        # d. finding index for maximizing argument
-        j = np.argmax(u)
-        
-        #Finding maximizing values
-        opt.LM = LM[j]
-        opt.HM = HM[j]
-        opt.LF = LF[j]
-        opt.HF = HF[j]
-
-        #Calculate ratio between hours worked at home for men and women
-        opt.HF_HM = HF[j]/HM[j] 
-
-        return opt
-    
-    def print_table_q1(self):
-        
-        # a. load parameters
-        par = self.par
-
-        # b. empty text for a start
-        text = ''
-        
-        # c. write alpha/Sigma in the corner of the code
-        text += f'{"Alpha/Sigma":<7s}{"":1s}'
-
-        # b. making the sigma values as the column values. 
-        for sigma in np.linspace(0.5,1.5,3):
-            par.sigma=sigma
-            text += f'{sigma:8.2f}'
-        text += '\n' + '-'*40 + '\n' # we add horizontal separator
-        
-        # d. Making the rows. 
-        for i,alpha in enumerate(np.linspace(0.25,0.75,3)):
-            par.alpha=alpha 
-            
-            #We need i>0 to avoid a blank row as the first row, so a layout fix. 
-            if i > 0: 
-                text += '\n'
-            
-            #alpha as row-values and with a vertical separator
-            text += f'{alpha:10.2f} |' 
-
-            #Plotting values of HF/HM
-            for sigma in np.linspace(0.5,1.5,3): 
-                par.sigma=sigma
-                sol = self.solve_discrete() #call the solve function
-                text += f'{sol.HF_HM:8.2f}' #plot values 
-        
-        #e. reset values of alpha and sigma. This is necessary to avoid problems later in the following questions. 
-        par.alpha = 0.5
-        par.sigma = 1.0
-        
-        # f. Printing the table
-        print(f"Table of HF/HM values:\n{text}")
 
     #We need negative value of utility function for the continuously function. 
     def utility_function(self, L): 
         return -self.calc_utility(L[0],L[1],L[2],L[3])*100
     
     def solve_continuously(self):
-        """Input are the same as for the discrete case"""
         par = self.par
         opt = self.opt
         
@@ -211,9 +128,8 @@ class HouseholdSpecializationModelClass:
 
         return opt
     
-    def solve_wF_vec(self, discrete=False):
+    def solve_wF_vec(self):
         """ solve model for vector of female wages 
-        For discrete case we use discrete=True and discrete=False for the continuous model
         """
 
         par = self.par
@@ -226,13 +142,9 @@ class HouseholdSpecializationModelClass:
         for i, wF in enumerate(par.wF_vec):
             par.wF = wF # Set the new value of wF
             
-            # Solve the model based on whether we have a discrete or continuous case
-            if discrete==True:
-                opt = self.solve_discrete()
-                log_HF_HM[i] = np.log(opt.HF_HM)
-            else:
-                opt = self.solve_continuously()
-                log_HF_HM[i] = np.log(opt.HF_HM)
+            # Solve the model
+            opt = self.solve_continuously()
+            log_HF_HM[i] = np.log(opt.HF_HM)
 
         par.wF = 1.0
         #We return wF to original value
@@ -243,29 +155,29 @@ class HouseholdSpecializationModelClass:
     def target(self, params):
         par = self.par
         opt = self.opt 
-        alpha_target, sigma_target = params
+        sigma_target,psi_target = params
         beta0_target=0.4
         beta1_target=-0.1
 
         #Running the regression with the target values, where the target values are those to be optimized. 
-        beta0,beta1=self.run_regression(alpha_target,sigma_target)
+        beta0,beta1=self.run_regression(sigma_target,psi_target)
         return (beta0_target-beta0)**2+(beta1_target-beta1)**2
     
     #Step 3 in described algorithm. 
     #Deleted alpha_optimal
-    def run_regression(self, sigma_optimal):
+    def run_regression(self, sigma_optimal,psi_optimal):
         """ This regression is for question 4 and 5 
-        Our input is the value from the solve_wF_Vec
-        Therefore it can be used for discrete and continuous case"""
+        Our input is the value from the solve_wF_Vec"""
 
         par = self.par
         opt = self.opt
 
         par.sigma=sigma_optimal
+        par.psi=psi_optimal
 
 
         x = np.log(par.wF_vec)
-        y = self.solve_wF_vec(discrete=False)
+        y = self.solve_wF_vec()
         A = np.vstack([np.ones(x.size),x]).T
 
         #Making the regression and returning the parameter estimates. 
@@ -281,18 +193,20 @@ class HouseholdSpecializationModelClass:
         #Defining the initial guess based on the seed. 
         init_guess = [np.random.uniform(0.01,1)]
 
-        #Bounds for alpha and sigma. 
-        bounds = [(0.01, 100)]
+        #Bounds for sigma and psi. We set the lower bound for psi to be 1, because we know men need higher 
+        # disutility of working for the model to fit better
+        bounds = [(0.01, 100), (1.0,100)]
 
         #Optimize. We use Nelder-Mead now because we do not have constraints
         result = optimize.minimize(self.target,init_guess, method='Nelder-Mead', bounds=bounds)
 
         #Saving result from the optimizer. 
         sigma_result=result.x[0]
+        psi_result=result.x[1]
 
         #Saving the results in one parameter in order to include in target function. 
-        params_result=sigma_result
+        params_result=sigma_result,psi_result
 
         #Returning the values. 
-        return sigma_result, self.target(params_result)   
+        return sigma_result,psi_result, self.target(params_result)   
 
