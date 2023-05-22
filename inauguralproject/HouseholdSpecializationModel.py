@@ -284,7 +284,7 @@ class HouseholdSpecializationModelClass:
         #Bounds for alpha and sigma. 
         bounds = [(0.01, 1-1e-8), (0.01, 100)]
 
-        #Optimize. 
+        #Optimize. We use Nelder-Mead now because we do not have constraints
         result = optimize.minimize(self.target,init_guess, method='Nelder-Mead', bounds=bounds)
 
         #Saving result from the optimizer. 
