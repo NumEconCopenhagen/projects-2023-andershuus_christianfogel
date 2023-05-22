@@ -238,13 +238,30 @@ class HouseholdSpecializationModelClass:
         #We return wF to original value
         return log_HF_HM #Return the vector of log ratio of HF/HM
 
-    def run_regression(self):
+
+    #Defining the target function for question 4. Step 1 in the algorithm described in section 4. 
+    def target(self, params):
+        par = self.par
+        opt = self.opt 
+        alpha_target, sigma_target = params
+        beta0_target=0.4
+        beta1_target=-0.1
+
+        #Running the regression with the target values, where the target values are those to be optimized. 
+        beta0,beta1=self.run_regression(alpha_target,sigma_target)
+        return (beta0_target-beta0)**2+(beta1_target-beta1)**2
+    
+    #Step 3 in described algorithm. 
+    def run_regression(self,alpha_optimal, sigma_optimal):
         """ This regression is for question 4 and 5 
         Our input is the value from the solve_wF_Vec
         Therefore it can be used for discrete and continuous case"""
 
         par = self.par
         opt = self.opt
+
+        par.alpha=alpha_optimal
+        par.sigma=sigma_optimal
 
 
         x = np.log(par.wF_vec)
@@ -254,7 +271,29 @@ class HouseholdSpecializationModelClass:
         #Making the regression and returning the parameter estimates. 
         opt.beta0,opt.beta1 = np.linalg.lstsq(A,y,rcond=None)[0]
 
+        return opt.beta0,opt.beta1
 
+    #Step 4 in the described algoirthm. 
+    def solve_optimal_alpha_sigma(self,used_seed):
+        #Setting a random seed
+        np.random.seed(used_seed)
 
+        #Defining the initial guess based on the seed. 
+        init_guess = [np.random.uniform(0.01,1), np.random.uniform(0.01,1)]
 
+        #Bounds for alpha and sigma. 
+        bounds = [(0.01, 1-1e-8), (0.01, 100)]
+
+        #Optimize. 
+        result = optimize.minimize(self.target,init_guess, method='Nelder-Mead', bounds=bounds)
+
+        #Saving result from the optimizer. 
+        alpha_result=result.x[0]
+        sigma_result=result.x[1]
+
+        #Saving the results in one parameter in order to include in target function. 
+        params_result=alpha_result,sigma_result
+
+        #Returning the values. 
+        return alpha_result, sigma_result, self.target(params_result)   
 
