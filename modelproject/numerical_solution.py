@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from types import SimpleNamespace
 
-class numerical_solution():
+class NumericalSolution():
     
     def __init__(self):
 

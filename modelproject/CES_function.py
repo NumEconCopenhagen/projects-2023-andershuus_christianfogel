@@ -5,7 +5,7 @@ from scipy.optimize import minimize
 
 
 
-class numerical_solution_ces():
+class NumericalSolutionCES():
 
     def __init__(self):
 
