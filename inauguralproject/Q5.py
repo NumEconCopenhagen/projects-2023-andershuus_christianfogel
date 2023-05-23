@@ -198,9 +198,8 @@ class HouseholdSpecializationModelClass:
         #Defining the initial guess based on the seed. 
         init_guess = [np.random.uniform(0.01,1)]
 
-        #Bounds for sigma and psi. We set the lower bound for psi to be 0, because we know men need higher 
-        #disutility of working for the model to fit better. However, as noted in question 5 this is not a theoretical constraint. 
-        bounds = [(0.01, 100), (0,10)]
+        #Bounds for sigma and psi. 
+        bounds = [(0.01, 100), (-10,10)]
 
         #Optimize. We use Nelder-Mead now because we do not have constraints
         result = optimize.minimize(self.target,init_guess, method='Nelder-Mead', bounds=bounds)
