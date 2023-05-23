@@ -180,7 +180,10 @@ class HouseholdSpecializationModelClass:
         # f. Printing the table
         print(f"Table of HF/HM values:\n{text}")
 
-    #We need negative value of utility function for the continuously function. 
+    #We need negative value of utility function for the continuously function.
+    """Calculate the negative value of the utility function. Inputs are the same as in calc_utility()
+    We multiply the utility by 100 to avoid imprecise estimates.
+    """
     def utility_function(self, L): 
         return -self.calc_utility(L[0],L[1],L[2],L[3])*100
     
@@ -204,7 +207,7 @@ class HouseholdSpecializationModelClass:
         self.utility_function, initial_guess,
         method='SLSQP', bounds=bounds, constraints=(constraint_men, constraint_women))
         
-        # Save results. x[0]=L[0] as so on. 
+        # Save results. x[0]=L[0] and so on. 
         opt.LM = solution_cont.x[0]
         opt.HM = solution_cont.x[1]
         opt.LF = solution_cont.x[2]

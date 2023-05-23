@@ -97,6 +97,9 @@ class HouseholdSpecializationModelClass:
         return utility - disutility
 
     #We need negative value of utility function for the continuously function. 
+    """Calculate the negative value of the utility function. Inputs are the same as in calc_utility()
+    We multiply the utility by 100 to avoid imprecise estimates.
+    """
     def utility_function(self, L): 
         return -self.calc_utility(L[0],L[1],L[2],L[3])*100
     
@@ -112,6 +115,7 @@ class HouseholdSpecializationModelClass:
         constraint_men = ({'type': 'ineq', 'fun': lambda L:  24-L[0]-L[1]})
         constraint_women = ({'type': 'ineq', 'fun': lambda L:  24-L[2]-L[3]})
         
+        #Hours worked cannot be 0 as we will divide with 0 when sigma is equal to 0.5. Therefore, leisure can also just be below 24 hours.
         bounds=((0,24-1e-8),(0+1e-8,24), (0,24-1e-8), (0+1e-8,24))
         initial_guess=[6,6,6,6]
 
@@ -120,7 +124,7 @@ class HouseholdSpecializationModelClass:
         self.utility_function, initial_guess,
         method='SLSQP', bounds=bounds, constraints=(constraint_men, constraint_women))
         
-        # Save results. x[0]=L[0] as so on. 
+        # Save results. x[0]=L[0] and so on. 
         opt.LM = solution_cont.x[0]
         opt.HM = solution_cont.x[1]
         opt.LF = solution_cont.x[2]
@@ -201,7 +205,7 @@ class HouseholdSpecializationModelClass:
         #Bounds for sigma and psi. 
         bounds = [(0.01, 100), (-10,10)]
 
-        #Optimize. We use Nelder-Mead now because we do not have constraints
+        #Optimize. 
         result = optimize.minimize(self.target,init_guess, method='Nelder-Mead', bounds=bounds)
 
         #Saving result from the optimizer. 
