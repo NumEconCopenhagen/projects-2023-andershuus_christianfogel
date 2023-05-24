@@ -172,7 +172,7 @@ class NumericalSolution():
             if np.abs(f)<tol: 
                 good_clearing=self.market_clearing(p)[0]
                 labor_clearing=self.market_clearing(p)[1]
-                print(f' Step {i:.2f}: p = {p:.2f} -> {f:12.8f}. Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. ')
+                print(f' Step {i:.2f}: p = {p:.2f} -> Good clearing = {good_clearing:.8f}. Labor clearing = {labor_clearing:.2f}. ')
                 break
             elif self.market_clearing(p_lower)[0]*f<0:
                 p_upper=p
