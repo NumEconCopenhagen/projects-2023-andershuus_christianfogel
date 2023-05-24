@@ -1,7 +1,6 @@
 import numpy as np
-import ipywidgets as widgets # Interactive plots
 import matplotlib.pyplot as plt
-from types import SimpleNamespace
+
 
 
 #Analytical solution, i.e. section 2

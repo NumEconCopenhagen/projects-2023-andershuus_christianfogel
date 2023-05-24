@@ -1,7 +1,5 @@
-import platformdirs
 from scipy import optimize
 import numpy as np
-import matplotlib.pyplot as plt
 from types import SimpleNamespace
 
 class NumericalSolution():
@@ -100,7 +98,7 @@ class NumericalSolution():
         par = self.par
         sol = self.sol
 
-        #b. call optimizer
+        #b. call optimizer. h cannot be higher than the initial endowment
         bound = ((0,par.L),)
         x0=[0.0]
         sol_h = optimize.minimize(self.firm_profit,x0,args = (p,),bounds=bound,method='L-BFGS-B')
@@ -118,6 +116,7 @@ class NumericalSolution():
         Args:
         c
         h
+        alpha: relative preferences towards consumption
 
         Returns:
         u: utility of consumer

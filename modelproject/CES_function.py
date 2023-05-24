@@ -8,8 +8,25 @@ from scipy.optimize import minimize
 class NumericalSolutionCES():
 
     def __init__(self):
+        """
+        parameters of the model:
+        sigma: The degree of substitutability between consumption and leisure (Cannot be 1)
+        beta: Returns to scale
+        A: Total factor productivity
+        L: Labor endowment
 
-        "Initial parameters. They can be changed as seen with beta and sigma"
+        variables of the model:
+        h: working hours
+        l: leisure
+        c: consumption
+        u: utility
+        y: total production
+        p: relative price
+        pi: firm profits
+        
+
+        """
+        # a. create SimpleNamespaces
 
         par = self.par = SimpleNamespace()
 
@@ -26,7 +43,15 @@ class NumericalSolutionCES():
 
     def production_function(self,h):
 
-        "production function of the firm. Specified in the text"
+        """production function of the firm
+        
+        Args:
+        h: hours worked
+
+        Returns:
+        y: total production
+
+        """
 
         #a. unpack
 
@@ -42,7 +67,22 @@ class NumericalSolutionCES():
 
     def firm_profit(self,h,p):
 
-        "profit function of the firm. The wage is normalized to 1"
+        """profit function of the firm
+        
+        Args:
+        h
+        p: relative price
+        
+        Calls function:
+        production_function()
+
+        Returns:
+        -pi: negative value of firm profits
+
+        The reason for return a negative value of firm profits is so we can use a minimizer
+        for firm profit maximization.
+        
+        """
 
         #a. profit
         pi = p*self.production_function(h)-h
@@ -52,6 +92,22 @@ class NumericalSolutionCES():
 
     def firm_profit_maximization(self,p):
 
+        """firm profit maximization
+
+        Args:
+        p
+
+        Calls functions:
+        firm_profit()
+        production_function()
+
+        Returns:
+        sol.h_star: Optimal working hours for a given p
+        sol.y_star: Optimal total production for a given p
+        sol.pi_star: Firm profits for optimal production and working hours and for a given p
+        
+        """
+
         #a. unpack
         par = self.par
         sol = self.sol
@@ -60,8 +116,6 @@ class NumericalSolutionCES():
         bound = ((0,par.L),)
         x0=[0.0]
         sol_h = optimize.minimize(self.firm_profit,x0,args = (p,),bounds=bound,method='L-BFGS-B')
-
-
 
         #c. unpack solution
         sol.h_star = sol_h.x[0]
@@ -73,7 +127,17 @@ class NumericalSolutionCES():
 
     def utility(self,c,l):
 
-        "CES-utility function"
+        """utility of the consumer (CES utility function)
+        
+        Args:
+        c
+        l
+        sigma: The degree of substitutability between consumption and leisure (Cannot be 1)
+
+        Returns:
+        u: utility of consumer
+        
+        """
 
         #a. unpack
         par = self.par
@@ -85,24 +149,60 @@ class NumericalSolutionCES():
 
     def utility_optimize(self,x):
 
-        #Rewriting the function in order to get a constraint later on. 
+        """utility_optimize
+
+        Args:
+        p
+
+        Calls functions:
+        utility
+
+        Returns:
+        utility function
+        """
         par = self.par
         return self.utility(x[0],x[1])
 
     def ineq_constraint(self,x,p):
 
+        """ineq_constraint
+
+        Args:
+        p
+        x: consumption and leisure
+
+        Calls functions:
+        profit_maximization
+
+        Returns:
+        sol.h_star: Optimal working hours for a given p
+        Constraint for the income. The income must be positive. 
+        """
         #a. unpack
         par = self.par
 
         #We are intersting in the profit (pi) for a given price. 
-        h_constraint, y_constraint, pi_constraint = self.firm_profit_maximization(p)
+        pi_constraint = self.firm_profit_maximization(p)[2]
 
         #This must be higher or equal to 0. 
         return pi_constraint+par.L-(p*x[0]+x[1]) # violated if negative
 
     def maximize_utility(self,p): 
 
-        "maximize utility using an optimizer"
+        """maximize_utility
+
+        Args:
+        p
+        L: Labor endowment 
+
+
+        ineq_constraint(): Constraint for the income. The income must be positive.
+        utility_optimize(): utility function
+
+        Returns:
+        c_star: Optimal consumption for a given p
+        l_star: Optimal leisure for a given p
+        """
 
         par = self.par
 
@@ -133,7 +233,19 @@ class NumericalSolutionCES():
 
     def market_clearing(self,p):
 
-        "calculating the excess demand of the good and working hours"
+        """market_clearing
+
+        Args:
+        p
+        L: Labor endowment 
+
+        firm_profit_maximization
+        maximize_utility
+
+        Returns:
+        goods_market_clearing: Market clearing for goods
+        labor_market_clearing: Market clearing for labor
+        """
 
         #a. unpack
         par = self.par
@@ -153,18 +265,33 @@ class NumericalSolutionCES():
         #e. output
         return goods_market_clearing, labor_market_clearing
 
-    def find_relative_price(self):
+    def find_relative_price(self,p_lower=0,p_upper=100):
+
+        """find_relative_price (in market clearing)
+
+        Args: 
+        p_lower: lower bound for relative price
+        p_upper: upper bound for relative price
+
+        function_to_solve
+        self.market_clearing
+
+        Returns:
+        p: relative price in market clearing
+        good_clearing: Should be 0 in order to have clearing
+        labor_clearing: Should be 0 in order to have clearing
+        """
 
         # a. unpack
         par = self.par
         sol = self.sol
 
-        # b. define the clearing function, which we want to be 0. 
+        # b. define the clearing function, which we want to be 0. We use Walras' law to only clear one market
         def function_to_solve(p):
             return self.market_clearing(p)[0]
 
-        # c. We are finding when the market is clearing. Brentq is used as brackets are not necessary in this case.
-        result = optimize.root_scalar(function_to_solve, method='brentq')
+        # c. We are finding when the market is clearing. brentq has found be faster for this case compared to bisect. 
+        result = optimize.root_scalar(function_to_solve, method='brentq', bracket=[p_lower, p_upper])
 
         # d. check if a solution was found. We do only want to save the results in this case. 
         if result.converged:
