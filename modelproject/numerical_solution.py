@@ -186,7 +186,20 @@ class NumericalSolution():
         return sol.c_star, sol.l_star
     
     def market_clearing(self,p):
-        "calculating the excess demand of the good and working hours"
+        """calculating excess supply of the good and excess demand of labor
+
+        Args:
+        p
+
+        Functions called:
+        firm_profit_maximization()
+        maximize_utility()
+
+        Returns:
+        goods_market_clearing: excess supply of the good
+        labor_market_clearing: excess demand of labor
+        
+        """
         #a. unpack
         par = self.par
         sol = self.sol
@@ -203,11 +216,28 @@ class NumericalSolution():
 
         return goods_market_clearing, labor_market_clearing
     
-    def find_relative_price(self,tol=1e-4,iterations=500, p_lower=0.25, p_upper=0.75):
-        """""
+    def find_relative_price(self,tol=1e-4,iterations=500, p_lower=1e-4, p_upper=100):
+        """
         This function finds theprice that causes markets to clear. 
         The function takes arguments specified in step 2 of the algorithm
         The functions until now all cover step 1.
+
+        Args:
+        tol: tolerance level for market clearing. Default value set to 1e-4
+        iterations: number of iterations allowed for while loop. Default value set to 500
+        p_lower: lowest bound for optimal relative prices. Default value set to 1e-4. 
+        -We set it to a small number above 0 to avoid deviding by 0 in the maximize_utility() method.
+        p_upper: upper bound for optimal relative prices. Default set to 100.
+        -We set it to 100, just to have a large number as our upper bound.
+
+        Functions called:
+        market_clearing()
+
+        Returns:
+        p: optimal relative price
+        good_clearing: value of excess supply at the optimal relative price
+        labor_clearing: value of excess demand for labor at the optimal relative price
+
         """
 
         #Initial values.                                                                                                       
