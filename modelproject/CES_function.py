@@ -156,7 +156,6 @@ class NumericalSolutionCES():
         Returns:
         utility function
         """
-        par = self.par
         return self.utility(x[0],x[1])
 
     def ineq_constraint(self,x,p):
@@ -245,7 +244,6 @@ class NumericalSolutionCES():
 
         #a. unpack
         par = self.par
-        sol = self.sol
 
         #b. optimal behavior of firm for a given price
         h,y,pi=self.firm_profit_maximization(p)
@@ -280,7 +278,6 @@ class NumericalSolutionCES():
 
         # a. unpack
         par = self.par
-        sol = self.sol
 
         # b. Define the clearing function, which we want to be 0. We use Walras' law as we then only need to clear one market. 
         def function_to_solve(p):

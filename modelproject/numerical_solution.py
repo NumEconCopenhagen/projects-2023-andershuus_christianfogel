@@ -202,7 +202,6 @@ class NumericalSolution():
         """
         #a. unpack
         par = self.par
-        sol = self.sol
 
         #b. optimal behavior of firm
         h,y,pi=self.firm_profit_maximization(p)
