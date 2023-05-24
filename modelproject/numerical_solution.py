@@ -7,20 +7,43 @@ from types import SimpleNamespace
 class NumericalSolution():
     
     def __init__(self):
+        """
+        parameters of the model:
+        alpha: Relative preferences towards consumption
+        beta: Returns to scale
+        A: Total factor productivity
+        L: Labor endowment
 
+        variables of the model:
+        h: working hours
+        l: leisure
+        c: consumption
+        u: utility
+        y: total production
+        p: relative price
+        pi: firm profits
+
+        """
+        # a. create SimpleNamespaces
         par = self.par = SimpleNamespace()
+        sol = self.sol = SimpleNamespace()
 
-        # a. parameters
+        # b. parameters
         par.alpha = 0.5
         par.beta = 0.5
         par.A = 20
         par.L = 75
 
-        # b. solution
-        sol = self.sol = SimpleNamespace()
-
     def production_function(self,h):
-        "production function of the firm"
+        """production function of the firm
+        
+        Args:
+        h: hours worked
+
+        Returns:
+        y: total production
+
+        """
 
         #a. unpack
         par = self.par
@@ -32,7 +55,22 @@ class NumericalSolution():
         return y
 
     def firm_profit(self,h,p):
-        "profit function of the firm"
+        """profit function of the firm
+        
+        Args:
+        h
+        p: relative price
+        
+        Calls function:
+        production_function()
+
+        Returns:
+        -pi: negative value of firm profits
+
+        The reason for return a negative value of firm profits is so we can use a minimizer
+        for firm profit maximization.
+        
+        """
 
         #a. profit
         pi = p*self.production_function(h)-h
@@ -41,6 +79,22 @@ class NumericalSolution():
         return -pi
     
     def firm_profit_maximization(self,p):
+
+        """firm profit maximization
+
+        Args:
+        p
+
+        Calls functions:
+        firm_profit()
+        production_function()
+
+        Returns:
+        sol.h_star: Optimal working hours for a given p
+        sol.y_star: Optimal total production for a given p
+        sol.pi_star: Firm profits for optimal production and working hours and for a given p
+        
+        """
 
         #a. unpack
         par = self.par
@@ -59,36 +113,65 @@ class NumericalSolution():
         return sol.h_star, sol.y_star, sol.pi_star
 
     def utility(self,c,h):
-        "utility of the consumer"
+        """utility of the consumer
+        
+        Args:
+        c
+        h
+
+        Returns:
+        u: utility of consumer
+        
+        """
 
         #a. unpack
         par = self.par
 
-        #b. utility
+        #b. utility (cobb-douglas)
         u = c**par.alpha*(par.L-h)**(1-par.alpha)
 
         #c. output
         return u
 
     def income(self,p):
-        "consumer's income/budget constraint"
+        """consumer's income/budget constraint
+        
+        Args:
+        p
+
+        Calls function:
+        firm_profit_maximization()
+
+        Returns:
+        sol.Inc: Consumers income for a given p
+
+        """
 
         #a. unpack
         par = self.par
         sol = self.sol
 
         #b. budget constraint. Minus because the income is defined negatively in order to optimize. 
-
-
-        h_inc,y_inc,pi_inc=self.firm_profit_maximization(p)
-
+        pi_inc=self.firm_profit_maximization(p)[2]
         sol.Inc = pi_inc+par.L
 
         #c. output
         return sol.Inc
 
-
     def maximize_utility(self,p):
+
+        """utility maximization of the consumer
+        
+        Args: p
+
+        Calls function:
+        income()
+
+        Returns:
+        sol.c_star: optimal consumption for a given p
+        sol.l_star: optimal leisure for a given p
+        
+        """
         
         # a.unpack
         par = self.par
@@ -101,35 +184,6 @@ class NumericalSolution():
         sol.l_star = (1-par.alpha)*utility_inc
 
         return sol.c_star, sol.l_star
-
-
-    def utility_maximization(self,p): 
-
-        #a. unpack
-        par = self.par
-        sol = self.sol
-
-        #b. call optimizer
-        #Bounds
-        bounds = ((0,np.inf),(0,par.L))
-        #Initial guess
-        x0=[25,8]
-
-        #Constraints. The income must be equal to or greater than the income. We first define l 
-        constraint = sol.Inc-p*self.utility[0]-par.L-sol.h_star
-        ineq_con = {'type': 'ineq', 'fun': constraint} 
-
-
-        # b. call optimizer
-        sol_con = optimize.minimize(self.utility,x0,
-                             method='SLSQP',
-                             bounds=bounds,
-                             constraints=[ineq_con],
-                             options={'disp':True})
-        c_star = sol_con.x[0]
-        l_star = sol_con.x[1]
-
-        return c_star, l_star
     
     def market_clearing(self,p):
         "calculating the excess demand of the good and working hours"
