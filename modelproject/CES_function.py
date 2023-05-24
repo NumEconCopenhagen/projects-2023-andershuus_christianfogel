@@ -153,53 +153,29 @@ class NumericalSolutionCES():
         #e. output
         return goods_market_clearing, labor_market_clearing
 
-    def find_relative_price(self,tol=1e-4,iterations=500, p_lower=0.25, p_upper=0.75):
-
-        "find price that causes markets to clear. We use Walras law and therefore focus on the good market (Same result to do for labor market)"
+    def find_relative_price(self):
 
         # a. unpack
         par = self.par
         sol = self.sol
 
-        #Initial values.                                                                                                       
-        i=0
+        # b. define the clearing function, which we want to be 0. 
+        def function_to_solve(p):
+            return self.market_clearing(p)[0]
 
-        #Want a max for the iterations. The whole loop is based on the algorithm. 
+        # c. We are finding when the market is clearing. Brentq is used as brackets are not necessary in this case.
+        result = optimize.root_scalar(function_to_solve, method='brentq')
 
-        while i<iterations:
-
-            #Define the mean price. 
-
-            p=(p_lower+p_upper)/2
-
-            #Find the function value. 
-
-            f = self.market_clearing(p)[0]
-
-            #Criteria for stopping. 
-            if np.abs(f)<tol: 
-                good_clearing=self.market_clearing(p)[0]
-                labor_clearing=self.market_clearing(p)[1]
-                consumption=self.maximize_utility(p)[0]
-                print(f' Step {i:.2f}: Beta = {par.beta:.2f}. Sigma = {par.sigma:.2f}  p = {p:.2f} -> Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. Consumption = {consumption:.2f}')
-                break
-
-            #First option in step 6 for the algortithm. 
-            elif self.market_clearing(p_lower)[0]*f<0:
-                p_upper=p
-
-            #Second option in step 6. 
-            elif self.market_clearing(p_upper)[0]*f<0:
-
-                p_lower=p
-
-            #To stop if the loop is broken. 
-
-            else: 
-                print("Fail")
-                return None
-
-            #Updating i, by adding 1. 
-            i+=1
+        # d. check if a solution was found. We do only want to save the results in this case. 
+        if result.converged:
+            #Save the result from the root finding. 
+            p = result.root
+            good_clearing=self.market_clearing(p)[0]
+            labor_clearing=self.market_clearing(p)[1]
+            consumption=self.maximize_utility(p)[0]
+            print(f' Beta = {par.beta:.2f}. Sigma = {par.sigma:.2f}  p = {p:.2f} -> Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. Consumption = {consumption:.2f}')
+        else:
+            print("Fail")
+            p, good_clearing, labor_clearing = None, None, None
 
         return p, good_clearing, labor_clearing
