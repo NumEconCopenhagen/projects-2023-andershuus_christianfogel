@@ -29,30 +29,26 @@ class NumericalSolutionCES():
         # a. create SimpleNamespaces
 
         par = self.par = SimpleNamespace()
+        sol = self.sol = SimpleNamespace()
 
-        # a. parameters
+        # b. parameters
 
         par.beta = 0.5
         par.A = 20
         par.L = 75
         par.sigma=0.99
 
-        # b. solution
-
-        sol = self.sol = SimpleNamespace()
-
     def production_function(self,h):
 
         """production function of the firm
         
         Args:
-        h: hours worked
+        h
 
         Returns:
         y: total production
 
         """
-
         #a. unpack
 
         par = self.par
@@ -71,7 +67,7 @@ class NumericalSolutionCES():
         
         Args:
         h
-        p: relative price
+        p
         
         Calls function:
         production_function()
@@ -132,10 +128,10 @@ class NumericalSolutionCES():
         Args:
         c
         l
-        sigma: The degree of substitutability between consumption and leisure (Cannot be 1)
+        sigma
 
         Returns:
-        u: utility of consumer
+        u: utility of consumer()
         
         """
 
@@ -155,7 +151,7 @@ class NumericalSolutionCES():
         p
 
         Calls functions:
-        utility
+        utility()
 
         Returns:
         utility function
@@ -169,19 +165,19 @@ class NumericalSolutionCES():
 
         Args:
         p
-        x: consumption and leisure
+        x
 
         Calls functions:
-        profit_maximization
+        profit_maximization()
 
         Returns:
         sol.h_star: Optimal working hours for a given p
-        Constraint for the income. The income must be positive. 
+        Constraint for the income. The income must be positive, which is the interpretation of the return. 
         """
         #a. unpack
         par = self.par
 
-        #We are intersting in the profit (pi) for a given price. 
+        #We are intersted in the profit (pi) for a given price. 
         pi_constraint = self.firm_profit_maximization(p)[2]
 
         #This must be higher or equal to 0. 
@@ -193,7 +189,7 @@ class NumericalSolutionCES():
 
         Args:
         p
-        L: Labor endowment 
+        L
 
 
         ineq_constraint(): Constraint for the income. The income must be positive.
@@ -237,7 +233,7 @@ class NumericalSolutionCES():
 
         Args:
         p
-        L: Labor endowment 
+        L
 
         firm_profit_maximization
         maximize_utility
@@ -286,7 +282,7 @@ class NumericalSolutionCES():
         par = self.par
         sol = self.sol
 
-        # b. define the clearing function, which we want to be 0. We use Walras' law to only clear one market
+        # b. Define the clearing function, which we want to be 0. We use Walras' law as we then only need to clear one market. 
         def function_to_solve(p):
             return self.market_clearing(p)[0]
 
@@ -299,8 +295,7 @@ class NumericalSolutionCES():
             p = result.root
             good_clearing=self.market_clearing(p)[0]
             labor_clearing=self.market_clearing(p)[1]
-            consumption=self.maximize_utility(p)[0]
-            print(f' Beta = {par.beta:.2f}. Sigma = {par.sigma:.2f}  p = {p:.2f} -> Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}. Consumption = {consumption:.2f}')
+            print(f' Beta = {par.beta:.2f}. Sigma = {par.sigma:.2f}  p = {p:.2f} -> Good clearing = {good_clearing:.2f}. Labor clearing = {labor_clearing:.2f}.')
         else:
             print("Fail")
             p, good_clearing, labor_clearing = None, None, None

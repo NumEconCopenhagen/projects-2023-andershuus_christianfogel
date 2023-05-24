@@ -36,7 +36,7 @@ class NumericalSolution():
         """production function of the firm
         
         Args:
-        h: hours worked
+        h
 
         Returns:
         y: total production
@@ -57,7 +57,7 @@ class NumericalSolution():
         
         Args:
         h
-        p: relative price
+        p
         
         Calls function:
         production_function()
@@ -101,6 +101,7 @@ class NumericalSolution():
         #b. call optimizer. h cannot be higher than the initial endowment
         bound = ((0,par.L),)
         x0=[0.0]
+        #Other optimizer could also have been used. 
         sol_h = optimize.minimize(self.firm_profit,x0,args = (p,),bounds=bound,method='L-BFGS-B')
 
         #c. unpack solution
@@ -116,7 +117,7 @@ class NumericalSolution():
         Args:
         c
         h
-        alpha: relative preferences towards consumption
+        alpha
 
         Returns:
         u: utility of consumer
@@ -195,8 +196,8 @@ class NumericalSolution():
         maximize_utility()
 
         Returns:
-        goods_market_clearing: excess supply of the good
-        labor_market_clearing: excess demand of labor
+        goods_market_clearing: excess supply of the good for a given p
+        labor_market_clearing: excess demand of labor for a given p
         
         """
         #a. unpack
@@ -216,12 +217,9 @@ class NumericalSolution():
         return goods_market_clearing, labor_market_clearing
     
     def find_relative_price(self,tol=1e-4,iterations=500, p_lower=1e-4, p_upper=100):
-        """
-        This function finds theprice that causes markets to clear. 
-        The function takes arguments specified in step 2 of the algorithm
-        The functions until now all cover step 1.
+        """finding the optimal relative price
 
-        Args:
+        Args: Step 2 in the algorithm is specifying this. 
         tol: tolerance level for market clearing. Default value set to 1e-4
         iterations: number of iterations allowed for while loop. Default value set to 500
         p_lower: lowest bound for optimal relative prices. Default value set to 1e-4. 

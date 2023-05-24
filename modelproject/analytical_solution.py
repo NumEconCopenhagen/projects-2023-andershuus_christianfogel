@@ -52,14 +52,15 @@ def interactive_figure(beta,A):
         
     Args:
 
-        beta: output elasticity
-        A: TFP
+        beta
+        A
         
     Returns:
     
         p_vec (in form of a figure)= vector of relative price of consumption good (Wage is normalized to 1) w.r.t. alpha
         c_vec (in form of a figure)= vector of consumption w.r.t. alpha
         l_vec (in form of a figure)= vector of leisure w.r.t. alpha
+        A plot of the relative price of consumption good w.r.t. alpha, where beta and A can vary. 
         
     """
     # a. Create vectors for x-axis and y-axis
