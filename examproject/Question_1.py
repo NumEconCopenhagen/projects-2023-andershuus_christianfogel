@@ -102,13 +102,11 @@ class Question_1_5():
 
         return -numerator/(1-par.rho)+self.disutility(L)
 
-    def utility_optimize(self, G):
-        par = self.par
-        
-        bounds = [(0, 24)]  # Define the bounds as a list of tuples
-        result = optimize.minimize(self.utility, x0=5, bounds=bounds, args=(G,))
-        L_opt = result.x[0]
-        return L_opt
+    def maximize_utility(self, G):
+            result = optimize.minimize_scalar(lambda L: self.utility(G, L), bounds=(0, 24), method='bounded')
+            optimal_L = result.x
+            max_utility = -result.fun
+            return optimal_L
     
     def government_constraint(self, L):
         par = self.par
@@ -121,7 +119,7 @@ class Question_1_5():
         par = self.par
 
         #b. optimal behavior of firm for a given price
-        L_opt=self.utility_optimize(G)
+        L_opt=self.maximize_utility(G)
 
         #c. optimal behavior of consumer for a price
         G_clearing=self.government_constraint(L_opt)
@@ -132,23 +130,23 @@ class Question_1_5():
         #e. output
         return clearing
     
-    def find_relative_price(self,G_lower=1,G_upper=100):
+    def find_government_consumption(self,G_lower=1,G_upper=100):
         # a. unpack
             par = self.par
 
-            # b. Define the clearing function, which we want to be 0. We use Walras' law as we then only need to clear one market. 
+            # b. Define the clearing function, which we want to be 0. Step 2 in described algorithm. 
             def function_to_solve(G):
                 return self.clearing(G)
 
-            # c. We are finding when the market is clearing. brentq has found be faster for this case compared to bisect. 
+            # c. Step 3 in described algorithm.
             result = optimize.root_scalar(function_to_solve, method='brentq', bracket=[G_lower, G_upper])
 
-            # d. check if a solution was found. We do only want to save the results in this case. 
+            # d. Step 4 in described algortithm. 
             if result.converged:
                 #Save the result from the root finding. 
                 G_solution = result.root
                 clearing=self.clearing(G_solution)
-                L_optimal=self.utility_optimize(G_solution)
+                L_optimal=self.maximize_utility(G_solution)
                 print(f' sigma = {par.sigma:.3f}. rho = {par.rho:.3f}  G = {G_solution:.6f} -> clearing = {clearing:.2f}.Working hours = {L_optimal:.2f}')
             else:
                 print("Fail")
@@ -192,11 +190,13 @@ class Question_1_6():
         G_optimal =  self.government_constraint(L_optimal,tau_optimal)
         disutility_optimal = self.disutility(L_optimal)
 
+        power1 = (par.sigma-1)/par.sigma
+        power2= par.sigma/(par.sigma-1)
 
-        return -(((par.alpha*C_optimal**((par.sigma-1)/par.sigma)
-                  +(1-par.alpha)*G_optimal**((par.sigma-1)/par.sigma))
-                  **(par.sigma/(par.sigma-1)))-1)/(1-par.rho)+disutility_optimal
-    def solve_social_optimum(self):
+        numerator=((par.alpha*C_optimal**power1+(1-par.alpha)*G_optimal**power1)**power2)**(1-par.rho)-1
+
+        return -numerator/(1-par.rho)+disutility_optimal
+    def solve_social_optimum_Q6(self):
         """ This is to find optimal value of alpha and sigma for question 6
         We use Nelder-Mead because we do not have constraints"""
 
@@ -220,4 +220,4 @@ class Question_1_6():
 
         #Returning the values. 
         print(f' Optimal labor supply = {L_optimal:.2f}. Optimal tax rate = {tau_optimal:.2f}. Utility in optimum = {utility_optimal:.2f}.')
-        return L_optimal, tau_optimal, utility_optimal
+        #return L_optimal, tau_optimal, utility_optimal
