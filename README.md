@@ -1,8 +1,7 @@
-# \[Anders Huus Pedersen og Christian Fogel Henneberg]
+# \[andershuus_christianfogel]
 
-**Group members:**
-- A: Anders Huus Pedersen
-- B: Christian Fogel Henneberg
+**Group name:**
+- andershuus_christianfogel
 
 
 This repository contains  
